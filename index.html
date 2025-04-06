@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bomberman Game</title>
+    <style>
+        body {
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #status {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        #title {
+            font-family: Arial, sans-serif;
+            font-size: 48px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        #instructions {
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(21, 60px);
+            grid-template-rows: repeat(11, 60px);
+            gap: 0;
+            position: relative;
+            width: 1260px;
+            height: 660px;
+            background-color: #87ceeb;
+        }
+
+        #board::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.5);
+            opacity: 0.5;
+            pointer-events: none;
+            filter: blur(1px) brightness(0.9);
+            z-index: -1;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            background: transparent;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            cursor: pointer;
+            transition: transform 0.1s ease, background-color 0.5s ease;
+        }
+
+        .shrinking-3 {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .shrinking-2 {
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .shrinking-1 {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        .player1 {
+            color: white;
+            text-shadow: 0 0 5px green;
+            outline: 2px solid green;
+            transition: transform 0.5s ease;
+        }
+
+        .player2 {
+            color: #ffff00;
+            text-shadow: 0 0 5px yellow;
+            outline: 2px solid yellow;
+            transition: transform 0.5s ease;
+        }
+
+        .player3 {
+            color: #4b0082;
+            text-shadow: 0 0 5px #4b0082;
+            outline: 2px solid #4b0082;
+            transition: transform 0.5s ease;
+        }
+
+        .player4 {
+            color: #ff69b4;
+            text-shadow: 0 0 5px #ff69b4;
+            outline: 2px solid #ff69b4;
+            transition: transform 0.5s ease;
+        }
+
+        .player-dying {
+            transform: scale(0);
+        }
+
+        .bomb-player1 {
+            color: white;
+            text-shadow: 0 0 5px green;
+            transform: scale(0.8);
+            transition: transform 1s ease;
+        }
+
+        .bomb-player2 {
+            color: #ffff00;
+            text-shadow: 0 0 5px yellow;
+            transform: scale(0.8);
+            transition: transform 1s ease;
+        }
+
+        .bomb-player3 {
+            color: #4b0082;
+            text-shadow: 0 0 5px #4b0082;
+            transform: scale(0.8);
+            transition: transform 1s ease;
+        }
+
+        .bomb-player4 {
+            color: #ff69b4;
+            text-shadow: 0 0 5px #ff69b4;
+            transform: scale(0.8);
+            transition: transform 1s ease;
+        }
+
+        .bomb-player1.exploding,
+        .bomb-player2.exploding,
+        .bomb-player3.exploding,
+        .bomb-player4.exploding {
+            transform: scale(1.2);
+        }
+
+        .big-bomb {
+            color: #ff0000;
+            text-shadow: 0 0 5px #ff0000;
+            font-size: 40px;
+            transform: scale(0.8);
+            transition: transform 1s ease;
+        }
+
+        .big-bomb.exploding {
+            transform: scale(1.2);
+        }
+
+        .block {
+            background-color: #8b4513;
+            transition: transform 0.5s ease;
+        }
+
+        .block.shrinking {
+            transform: scale(0.5);
+        }
+
+        .durable-block {
+            background-color: #555555;
+            border: 2px solid #333333;
+            transition: transform 0.5s ease;
+        }
+
+        .durable-block.hp-3 {
+            background-color: #555555;
+        }
+
+        .durable-block.hp-2 {
+            background-color: #777777;
+        }
+
+        .durable-block.hp-1 {
+            background-color: #999999;
+        }
+
+        .durable-block.shrinking {
+            transform: scale(0.5);
+        }
+
+        .exploded {
+            outline: 3px solid red;
+        }
+
+        .warning {
+            background-color: yellow;
+        }
+
+        #death-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 36px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        #player1-score {
+            position: absolute;
+            left: 50px;
+            top: 50px;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px black;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        #player2-score {
+            position: absolute;
+            right: 50px;
+            top: 50px;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffff00;
+            text-shadow: 2px 2px 4px black;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        #player3-score {
+            position: absolute;
+            left: 50px;
+            bottom: 50px;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #4b0082;
+            text-shadow: 2px 2px 4px black;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        #player4-score {
+            position: absolute;
+            right: 50px;
+            bottom: 50px;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff69b4;
+            text-shadow: 2px 2px 4px black;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="player1-score">P1: 0</div>
+    <div id="player2-score">P2: 0</div>
+    <div id="status">
+        <div id="title">SEEDOBOMBER</div>
+        <div id="instructions">Playing Seedobomber! (WASD to move, Space to drop bomb)</div>
+    </div>
+    <div id="board"></div>
+    <div id="player3-score">P3: 0</div>
+    <div id="player4-score">P4: 0</div>
+    <div id="death-screen">
+        <div id="death-message"></div>
+        <div>New game will start in <span id="countdown">3</span>...</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const status = document.getElementById('status');
+            const board = document.getElementById('board');
+            const deathScreen = document.getElementById('death-screen');
+            const deathMessage = document.getElementById('death-message');
+            const countdownElement = document.getElementById('countdown');
+            const player1Score = document.getElementById('player1-score');
+            const player2Score = document.getElementById('player2-score');
+            const player3Score = document.getElementById('player3-score');
+            const player4Score = document.getElementById('player4-score');
+            let rows = 11;
+            let cols = 21;
+            let gameState;
+            let startTime;
+            let gameActive = true;
+            let scores = { player1: 0, player2: 0, player3: 0, player4: 0 };
+            let lastBombTime = { player1: 0, player2: 0, player3: 0, player4: 0 };
+            let shrinkTimerId = null;
+            let shrinkIntervalId = null;
+            let aiLastMove = { player2: null, player3: null, player4: null };
+
+            function initializeGame() {
+                rows = 11;
+                cols = 21;
+                board.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
+                board.style.gridTemplateRows = `repeat(${rows}, 60px)`;
+                board.style.width = `${cols * 60}px`;
+                board.style.height = `${rows * 60}px`;
+
+                gameState = {
+                    player1: { x: 0, y: 0, alive: true },
+                    player2: { x: cols - 1, y: 0, alive: true },
+                    player3: { x: 0, y: rows - 1, alive: true },
+                    player4: { x: cols - 1, y: rows - 1, alive: true },
+                    bombs: [],
+                    bigBombs: [],
+                    durableBlocks: [],
+                    blocks: [],
+                    exploded: []
+                };
+
+                gameState.bigBombs = generateBigBombs();
+                gameState.durableBlocks = generateDurableBlocks();
+                gameState.blocks = generateBlocks();
+
+                startTime = Date.now();
+                gameActive = true;
+                setupBoard();
+                render();
+                updateScores();
+                startShrinkTimer();
+                startAI('player2');
+                startAI('player3');
+                startAI('player4');
+            }
+
+            function generateBigBombs() {
+                const bigBombs = [];
+                const numBombs = Math.floor(Math.random() * 3) + 3;
+                const centerX = Math.floor(cols / 2);
+                const centerY = Math.floor(rows / 2);
+                const possiblePositions = [];
+
+                for (let y = centerY - 4; y <= centerY + 4; y++) {
+                    for (let x = centerX - 8; x <= centerX + 8; x++) {
+                        if (x >= 0 && x < cols && y >= 0 && y < rows && 
+                            !(x <= 2 && y <= 2) && !(x >= cols - 3 && y <= 2) &&
+                            !(x <= 2 && y >= rows - 3) && !(x >= cols - 3 && y >= rows - 3)) {
+                            possiblePositions.push({ x, y });
+                        }
+                    }
+                }
+
+                for (let i = 0; i < numBombs && possiblePositions.length > 0; i++) {
+                    const index = Math.floor(Math.random() * possiblePositions.length);
+                    bigBombs.push({ x: possiblePositions[index].x, y: possiblePositions[index].y, active: true });
+                    possiblePositions.splice(index, 1);
+                }
+                return bigBombs;
+            }
+
+            function generateDurableBlocks() {
+                const durableBlocks = [];
+                const numBlocks = Math.floor(Math.random() * 19) + 12;
+                const centerX = Math.floor(cols / 2);
+                const centerY = Math.floor(rows / 2);
+                const possiblePositions = [];
+
+                for (let y = centerY - 3; y <= centerY + 3; y++) {
+                    for (let x = centerX - 5; x <= centerX + 5; x++) {
+                        if (x >= 0 && x < cols && y >= 0 && y < rows && 
+                            !(x <= 2 && y <= 2) && !(x >= cols - 3 && y <= 2) &&
+                            !(x <= 2 && y >= rows - 3) && !(x >= cols - 3 && y >= rows - 3) &&
+                            !gameState.bigBombs.some(b => b.x === x && b.y === y && b.active)) {
+                            possiblePositions.push({ x, y });
+                        }
+                    }
+                }
+
+                for (let i = 0; i < numBlocks && possiblePositions.length > 0; i++) {
+                    const index = Math.floor(Math.random() * possiblePositions.length);
+                    durableBlocks.push({ x: possiblePositions[index].x, y: possiblePositions[index].y, hp: 3 });
+                    possiblePositions.splice(index, 1);
+                }
+                return durableBlocks;
+            }
+
+            function triggerBigBomb(x, y) {
+                if (!gameActive || !gameState.bigBombs.some(b => b.x === x && b.y === y && b.active)) return;
+
+                const explosionArea = [];
+                for (let i = 0; i < cols; i++) explosionArea.push({ x: i, y });
+                for (let j = 0; j < rows; j++) explosionArea.push({ x, y: j });
+
+                const bombCell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                if (bombCell) bombCell.classList.add('exploding');
+
+                setTimeout(() => {
+                    if (!gameActive) return;
+
+                    explosionArea.forEach(pos => {
+                        const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
+                        if (cell) cell.classList.add('warning');
+                    });
+
+                    setTimeout(() => {
+                        if (!gameActive) return;
+                        const bombIndex = gameState.bigBombs.findIndex(b => b.x === x && b.y === y && b.active);
+                        if (bombIndex === -1) return;
+
+                        gameState.bigBombs[bombIndex].active = false;
+                        if (bombCell) bombCell.classList.remove('exploding', 'warning');
+
+                        gameState.bombs.push({ x, y, owner: 'bigBomb' });
+                        gameState.exploded = [...new Set(explosionArea.map(pos => `${pos.x},${pos.y}`))].map(pos => {
+                            const [x, y] = pos.split(',').map(Number);
+                            return { x, y };
+                        });
+
+                        explosionArea.forEach(pos => {
+                            const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
+                            if (cell) cell.classList.remove('warning');
+                        });
+
+                        const blocksToShrink = gameState.blocks.filter(block =>
+                            explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
+                        );
+                        blocksToShrink.forEach(block => {
+                            const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
+                            if (blockCell) blockCell.classList.add('shrinking');
+                        });
+
+                        const durableBlocksToDestroy = gameState.durableBlocks.filter(block =>
+                            explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
+                        );
+                        durableBlocksToDestroy.forEach(block => {
+                            const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
+                            if (blockCell) blockCell.classList.add('shrinking');
+                        });
+
+                        const bigBombsToTrigger = gameState.bigBombs.filter(b => 
+                            b.active && explosionArea.some(exp => exp.x === b.x && exp.y === b.y) && (b.x !== x || b.y !== y)
+                        );
+                        bigBombsToTrigger.forEach(bomb => triggerBigBomb(bomb.x, bomb.y));
+
+                        setTimeout(() => {
+                            if (!gameActive) return;
+                            gameState.blocks = gameState.blocks.filter(block =>
+                                !explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
+                            );
+                            gameState.durableBlocks = gameState.durableBlocks.filter(block =>
+                                !explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
+                            );
+
+                            let playersHit = {
+                                player1: gameState.player1.alive && explosionArea.some(exp => exp.x === gameState.player1.x && exp.y === gameState.player1.y),
+                                player2: gameState.player2.alive && explosionArea.some(exp => exp.x === gameState.player2.x && exp.y === gameState.player2.y),
+                                player3: gameState.player3.alive && explosionArea.some(exp => exp.x === gameState.player3.x && exp.y === gameState.player3.y),
+                                player4: gameState.player4.alive && explosionArea.some(exp => exp.x === gameState.player4.x && exp.y === gameState.player4.y)
+                            };
+
+                            Object.keys(playersHit).forEach(player => {
+                                if (playersHit[player]) {
+                                    gameState[player].alive = false;
+                                    const playerCell = document.querySelector(`.cell[data-x="${gameState[player].x}"][data-y="${gameState[player].y}"]`);
+                                    if (playerCell) {
+                                        playerCell.classList.add('player-dying');
+                                        setTimeout(() => {
+                                            playerCell.innerHTML = '';
+                                            playerCell.classList.remove(player, 'player-dying');
+                                        }, 500);
+                                    }
+                                }
+                            });
+
+                            const alivePlayers = ['player1', 'player2', 'player3', 'player4'].filter(p => gameState[p].alive);
+                            if (alivePlayers.length === 1) {
+                                const winner = alivePlayers[0];
+                                scores[winner]++;
+                                gameActive = false;
+                                setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins!`), 500);
+                            } else if (!gameState.player1.alive) {
+                                gameActive = false;
+                                const aliveOpponents = ['player2', 'player3', 'player4'].filter(p => gameState[p].alive);
+                                if (aliveOpponents.length > 0) {
+                                    const winner = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
+                                    scores[winner]++;
+                                    setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins! P1 died.`), 500);
+                                } else {
+                                    setTimeout(() => showDeathScreen('P1 died, no winners!'), 500);
+                                }
+                            }
+
+                            gameState.bombs = gameState.bombs.filter(b => b.x !== x || b.y !== y);
+                            render();
+                            setTimeout(() => {
+                                gameState.exploded = [];
+                                render();
+                            }, 500);
+                        }, 500);
+                    }, 1000);
+                }, 500);
+            }
+
+            function getExplosionArea(x, y) {
+                const explosionRange = 1;
+                const explosionArea = [{ x, y }];
+                const directions = [
+                    { dx: -1, dy: 0 },
+                    { dx: 1, dy: 0 },
+                    { dx: 0, dy: -1 },
+                    { dx: 0, dy: 1 }
+                ];
+
+                directions.forEach(dir => {
+                    const newX = x + dir.dx;
+                    const newY = y + dir.dy;
+                    if (newX >= 0 && newX < cols && newY >= 0 && newY < rows) {
+                        explosionArea.push({ x: newX, y: newY });
+                    }
+                });
+
+                return explosionArea;
+            }
+
+            function generateBlocks() {
+                const blocks = [];
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        if (Math.random() < 0.7 && 
+                            !(x <= 2 && y <= 2) && !(x >= cols - 3 && y <= 2) &&
+                            !(x <= 2 && y >= rows - 3) && !(x >= cols - 3 && y >= rows - 3) &&
+                            !gameState.bigBombs.some(b => b.x === x && b.y === y && b.active) &&
+                            !gameState.durableBlocks.some(b => b.x === x && b.y === y)) {
+                            blocks.push({ x, y });
+                        }
+                    }
+                }
+                return blocks;
+            }
+
+            function setupBoard() {
+                board.innerHTML = '';
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        board.appendChild(cell);
+                    }
+                }
+            }
+
+            function render() {
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach(cell => {
+                    cell.innerHTML = '';
+                    cell.classList.remove('player1', 'player2', 'player3', 'player4', 'bomb-player1', 'bomb-player2', 'bomb-player3', 'bomb-player4', 'big-bomb', 'block', 'durable-block', 'hp-1', 'hp-2', 'hp-3', 'exploded', 'exploding', 'shrinking', 'shrinking-1', 'shrinking-2', 'shrinking-3', 'player-dying', 'warning');
+                });
+
+                gameState.blocks.forEach(block => {
+                    const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
+                    if (blockCell) blockCell.classList.add('block');
+                });
+
+                gameState.durableBlocks.forEach(block => {
+                    const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
+                    if (blockCell) {
+                        blockCell.classList.add('durable-block', `hp-${block.hp}`);
+                    }
+                });
+
+                gameState.bombs.forEach(bomb => {
+                    const bombCell = document.querySelector(`.cell[data-x="${bomb.x}"][data-y="${bomb.y}"]`);
+                    if (bombCell) {
+                        bombCell.innerHTML = '💣';
+                        bombCell.classList.add(bomb.owner === 'player1' ? 'bomb-player1' : 
+                                               bomb.owner === 'player2' ? 'bomb-player2' : 
+                                               bomb.owner === 'player3' ? 'bomb-player3' : 
+                                               bomb.owner === 'player4' ? 'bomb-player4' : 'big-bomb');
+                    }
+                });
+
+                gameState.bigBombs.forEach(bigBomb => {
+                    if (bigBomb.active) {
+                        const bigBombCell = document.querySelector(`.cell[data-x="${bigBomb.x}"][data-y="${bigBomb.y}"]`);
+                        if (bigBombCell) {
+                            bigBombCell.innerHTML = '💣';
+                            bigBombCell.classList.add('big-bomb');
+                        }
+                    }
+                });
+
+                gameState.exploded.forEach(pos => {
+                    const explodedCell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
+                    if (explodedCell) explodedCell.classList.add('exploded');
+                });
+
+                if (gameState.player1.alive) {
+                    const player1Cell = document.querySelector(`.cell[data-x="${gameState.player1.x}"][data-y="${gameState.player1.y}"]`);
+                    if (player1Cell) {
+                        player1Cell.innerHTML = '🌱';
+                        player1Cell.classList.add('player1');
+                    }
+                }
+
+                if (gameState.player2.alive) {
+                    const player2Cell = document.querySelector(`.cell[data-x="${gameState.player2.x}"][data-y="${gameState.player2.y}"]`);
+                    if (player2Cell) {
+                        player2Cell.innerHTML = '😊';
+                        player2Cell.classList.add('player2');
+                    }
+                }
+
+                if (gameState.player3.alive) {
+                    const player3Cell = document.querySelector(`.cell[data-x="${gameState.player3.x}"][data-y="${gameState.player3.y}"]`);
+                    if (player3Cell) {
+                        player3Cell.innerHTML = '🦑';
+                        player3Cell.classList.add('player3');
+                    }
+                }
+
+                if (gameState.player4.alive) {
+                    const player4Cell = document.querySelector(`.cell[data-x="${gameState.player4.x}"][data-y="${gameState.player4.y}"]`);
+                    if (player4Cell) {
+                        player4Cell.innerHTML = '🦄';
+                        player4Cell.classList.add('player4');
+                    }
+                }
+            }
+
+            function updateScores() {
+                player1Score.textContent = `P1: ${scores.player1}`;
+                player2Score.textContent = `P2: ${scores.player2}`;
+                player3Score.textContent = `P3: ${scores.player3}`;
+                player4Score.textContent = `P4: ${scores.player4}`;
+            }
+
+            function isWalkable(x, y, player) {
+                return x >= 0 && x < cols && y >= 0 && y < rows &&
+                    !gameState.blocks.some(b => b.x === x && b.y === y) &&
+                    !gameState.durableBlocks.some(b => b.x === x && b.y === y) &&
+                    !gameState.bombs.some(b => b.x === x && b.y === y) &&
+                    !gameState.bigBombs.some(b => b.active && b.x === x && b.y === y) &&
+                    !['player1', 'player2', 'player3', 'player4'].some(p => 
+                        p !== player && gameState[p].alive && gameState[p].x === x && gameState[p].y === y
+                    );
+            }
+
+            function dropBomb(player, playerId) {
+                if (!gameActive || !gameState[playerId].alive) return;
+                const now = Date.now();
+                if (now - lastBombTime[playerId] < 1000) return;
+                lastBombTime[playerId] = now;
+
+                const { x, y } = gameState[playerId];
+                gameState.bombs.push({ x, y, owner: playerId });
+                render();
+
+                setTimeout(() => {
+                    if (!gameActive) return;
+                    const bombCell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                    if (bombCell) bombCell.classList.add('exploding');
+
+                    setTimeout(() => {
+                        if (!gameActive) return;
+                        const explosionArea = getExplosionArea(x, y);
+                        gameState.exploded = explosionArea;
+
+                        const blocksToShrink = gameState.blocks.filter(block =>
+                            explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
+                        );
+                        blocksToShrink.forEach(block => {
+                            const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
+                            if (blockCell) blockCell.classList.add('shrinking');
+                        });
+
+                        const durableBlocksHit = gameState.durableBlocks.filter(block =>
+                            explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
+                        );
+                        durableBlocksHit.forEach(block => {
+                            block.hp--;
+                            const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
+                            if (block.hp <= 0 && blockCell) blockCell.classList.add('shrinking');
+                        });
+
+                        gameState.bigBombs.forEach(bigBomb => {
+                            if (bigBomb.active && explosionArea.some(exp => exp.x === bigBomb.x && exp.y === bigBomb.y)) {
+                                triggerBigBomb(bigBomb.x, bigBomb.y);
+                            }
+                        });
+
+                        setTimeout(() => {
+                            if (!gameActive) return;
+                            gameState.blocks = gameState.blocks.filter(block =>
+                                !explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
+                            );
+                            gameState.durableBlocks = gameState.durableBlocks.filter(block => block.hp > 0);
+
+                            let playersHit = {
+                                player1: gameState.player1.alive && explosionArea.some(exp => exp.x === gameState.player1.x && exp.y === gameState.player1.y),
+                                player2: gameState.player2.alive && explosionArea.some(exp => exp.x === gameState.player2.x && exp.y === gameState.player2.y),
+                                player3: gameState.player3.alive && explosionArea.some(exp => exp.x === gameState.player3.x && exp.y === gameState.player3.y),
+                                player4: gameState.player4.alive && explosionArea.some(exp => exp.x === gameState.player4.x && exp.y === gameState.player4.y)
+                            };
+
+                            Object.keys(playersHit).forEach(player => {
+                                if (playersHit[player]) {
+                                    gameState[player].alive = false;
+                                    const playerCell = document.querySelector(`.cell[data-x="${gameState[player].x}"][data-y="${gameState[player].y}"]`);
+                                    if (playerCell) {
+                                        playerCell.classList.add('player-dying');
+                                        setTimeout(() => {
+                                            playerCell.innerHTML = '';
+                                            playerCell.classList.remove(player, 'player-dying');
+                                        }, 500);
+                                    }
+                                }
+                            });
+
+                            const alivePlayers = ['player1', 'player2', 'player3', 'player4'].filter(p => gameState[p].alive);
+                            if (alivePlayers.length === 1) {
+                                const winner = alivePlayers[0];
+                                scores[winner]++;
+                                gameActive = false;
+                                setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins!`), 500);
+                            } else if (!gameState.player1.alive) {
+                                gameActive = false;
+                                const aliveOpponents = ['player2', 'player3', 'player4'].filter(p => gameState[p].alive);
+                                if (aliveOpponents.length > 0) {
+                                    const winner = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
+                                    scores[winner]++;
+                                    setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins! P1 died.`), 500);
+                                } else {
+                                    setTimeout(() => showDeathScreen('P1 died, no winners!'), 500);
+                                }
+                            }
+
+                            gameState.bombs = gameState.bombs.filter(b => b.x !== x || b.y !== y);
+                            render();
+                            setTimeout(() => {
+                                gameState.exploded = [];
+                                render();
+                            }, 500);
+                        }, 500);
+                    }, 500);
+                }, 500);
+            }
+
+            function showDeathScreen(message) {
+                deathMessage.textContent = message;
+                deathScreen.style.display = 'flex';
+                board.style.display = 'none';
+                status.style.display = 'none';
+                player1Score.style.display = 'none';
+                player2Score.style.display = 'none';
+                player3Score.style.display = 'none';
+                player4Score.style.display = 'none';
+                let countdown = 3;
+                countdownElement.textContent = countdown;
+
+                const interval = setInterval(() => {
+                    countdown--;
+                    countdownElement.textContent = countdown;
+                    if (countdown <= 0) {
+                        clearInterval(interval);
+                        if (shrinkTimerId) clearTimeout(shrinkTimerId);
+                        if (shrinkIntervalId) clearInterval(shrinkIntervalId);
+                        deathScreen.style.display = 'none';
+                        board.style.display = 'grid';
+                        status.style.display = 'block';
+                        player1Score.style.display = 'block';
+                        player2Score.style.display = 'block';
+                        player3Score.style.display = 'block';
+                        player4Score.style.display = 'block';
+                        initializeGame();
+                    }
+                }, 1000);
+            }
+
+            function startShrinkTimer() {
+                shrinkTimerId = setTimeout(() => {
+                    shrinkIntervalId = setInterval(() => {
+                        if (!gameActive || (rows <= 1 && cols <= 1)) {
+                            clearInterval(shrinkIntervalId);
+                            return;
+                        }
+
+                        const oldRows = rows;
+                        const oldCols = cols;
+                        const shrinkingEdges = [];
+
+                        // Define shrinking edges
+                        if (rows > 1) {
+                            // Top and bottom rows
+                            for (let x = 0; x < oldCols; x++) {
+                                shrinkingEdges.push({ x, y: 0 });
+                                shrinkingEdges.push({ x, y: oldRows - 1 });
+                            }
+                            // Left and right columns (excluding corners already counted)
+                            for (let y = 1; y < oldRows - 1; y++) {
+                                shrinkingEdges.push({ x: 0, y });
+                                shrinkingEdges.push({ x: oldCols - 1, y });
+                            }
+                        } else {
+                            // When rows = 1, shrink leftmost column
+                            shrinkingEdges.push({ x: 0, y: 0 });
+                        }
+
+                        // Kill players on shrinking edges immediately
+                        ['player1', 'player2', 'player3', 'player4'].forEach(player => {
+                            if (gameState[player].alive) {
+                                const { x, y } = gameState[player];
+                                if (shrinkingEdges.some(edge => edge.x === x && edge.y === y)) {
+                                    gameState[player].alive = false;
+                                    const playerCell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                                    if (playerCell) {
+                                        playerCell.classList.add('player-dying');
+                                        setTimeout(() => {
+                                            playerCell.innerHTML = '';
+                                            playerCell.classList.remove(player, 'player-dying');
+                                        }, 500);
+                                    }
+                                }
+                            }
+                        });
+
+                        // Check win conditions after immediate kills
+                        const alivePlayers = ['player1', 'player2', 'player3', 'player4'].filter(p => gameState[p].alive);
+                        if (alivePlayers.length === 1) {
+                            const winner = alivePlayers[0];
+                            scores[winner]++;
+                            gameActive = false;
+                            setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins!`), 500);
+                            clearInterval(shrinkIntervalId);
+                            return;
+                        } else if (!gameState.player1.alive) {
+                            gameActive = false;
+                            const aliveOpponents = ['player2', 'player3', 'player4'].filter(p => gameState[p].alive);
+                            if (aliveOpponents.length > 0) {
+                                const winner = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
+                                scores[winner]++;
+                                setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins! P1 died.`), 500);
+                            } else {
+                                setTimeout(() => showDeathScreen('P1 died, no winners!'), 500);
+                            }
+                            clearInterval(shrinkIntervalId);
+                            return;
+                        }
+
+                        // Warning animation
+                        setTimeout(() => {
+                            shrinkingEdges.forEach(pos => {
+                                const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
+                                if (cell) cell.classList.add('shrinking-3');
+                            });
+                        }, 0);
+
+                        setTimeout(() => {
+                            shrinkingEdges.forEach(pos => {
+                                const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
+                                if (cell) {
+                                    cell.classList.remove('shrinking-3');
+                                    cell.classList.add('shrinking-2');
+                                }
+                            });
+                        }, 1000);
+
+                        setTimeout(() => {
+                            shrinkingEdges.forEach(pos => {
+                                const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
+                                if (cell) {
+                                    cell.classList.remove('shrinking-2');
+                                    cell.classList.add('shrinking-1');
+                                }
+                            });
+                        }, 2000);
+
+                        // Finalize shrink after animation
+                        setTimeout(() => {
+                            if (!gameActive) return;
+
+                            if (rows > 1) {
+                                rows -= 2;
+                                board.style.gridTemplateRows = `repeat(${rows}, 60px)`;
+                                board.style.height = `${rows * 60}px`;
+                            } else {
+                                cols -= 1;
+                                board.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
+                                board.style.width = `${cols * 60}px`;
+                            }
+
+                            gameState.blocks = gameState.blocks.filter(b => b.x >= 0 && b.x < cols && b.y >= 0 && b.y < rows);
+                            gameState.durableBlocks = gameState.durableBlocks.filter(b => b.x >= 0 && b.x < cols && b.y >= 0 && b.y < rows);
+                            gameState.bombs = gameState.bombs.filter(b => b.x >= 0 && b.x < cols && b.y >= 0 && b.y < rows);
+                            gameState.bigBombs = gameState.bigBombs.filter(b => b.active && b.x >= 0 && b.x < cols && b.y >= 0 && b.y < rows);
+
+                            setupBoard();
+                            render();
+                        }, 3000);
+                    }, 10000);
+                }, 15000);
+            }
+
+            function isSafeToBomb(x, y, playerId) {
+                const explosionArea = getExplosionArea(x, y);
+                const directions = [
+                    { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+                    { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
+                ];
+                return directions.some(dir => {
+                    const newX = x + dir.dx;
+                    const newY = y + dir.dy;
+                    return isWalkable(newX, newY, playerId) && !explosionArea.some(exp => exp.x === newX && exp.y === newY);
+                });
+            }
+
+            function startAI(playerId) {
+                const targetPlayer = 'player1';
+                const aiInterval = setInterval(() => {
+                    if (!gameActive || !gameState[playerId].alive) return clearInterval(aiInterval);
+
+                    const { x, y } = gameState[playerId];
+                    const dx = gameState[targetPlayer].x - x;
+                    const dy = gameState[targetPlayer].y - y;
+                    const distance = Math.abs(dx) + Math.abs(dy);
+
+                    let dangerZone = [];
+                    gameState.bombs.forEach(bomb => {
+                        if (bomb.owner !== 'bigBomb') {
+                            const area = getExplosionArea(bomb.x, bomb.y);
+                            dangerZone.push(...area);
+                        }
+                    });
+
+                    const directions = [
+                        { dx: 0, dy: -1, name: 'up' },
+                        { dx: 0, dy: 1, name: 'down' },
+                        { dx: -1, dy: 0, name: 'left' },
+                        { dx: 1, dy: 0, name: 'right' }
+                    ];
+
+                    for (let i = directions.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [directions[i], directions[j]] = [directions[j], directions[i]];
+                    }
+
+                    if (dangerZone.some(d => d.x === x && d.y === y)) {
+                        for (let dir of directions) {
+                            const newX = x + dir.dx;
+                            const newY = y + dir.dy;
+                            if (isWalkable(newX, newY, playerId) && !dangerZone.some(d => d.x === newX && d.y === newY)) {
+                                gameState[playerId].x = newX;
+                                gameState[playerId].y = newY;
+                                aiLastMove[playerId] = dir.name;
+                                render();
+                                return;
+                            }
+                        }
+                    }
+
+                    const shouldBomb = Math.random() < 0.8 && distance > 1;
+                    if (shouldBomb) {
+                        const isSafe = isSafeToBomb(x, y, playerId);
+                        if (isSafe || (Math.random() < 0.3 && !isSafe)) {
+                            dropBomb(gameState[playerId], playerId);
+                            for (let dir of directions) {
+                                const newX = x + dir.dx;
+                                const newY = y + dir.dy;
+                                if (isWalkable(newX, newY, playerId) && !dangerZone.some(d => d.x === newX && d.y === newY)) {
+                                    gameState[playerId].x = newX;
+                                    gameState[playerId].y = newY;
+                                    aiLastMove[playerId] = dir.name;
+                                    render();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    let moved = false;
+                    for (let dir of directions) {
+                        const newX = x + (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : -1) : 0);
+                        const newY = y + (Math.abs(dx) <= Math.abs(dy) ? (dy > 0 ? 1 : -1) : 0);
+                        if (isWalkable(newX, newY, playerId) && 
+                            !dangerZone.some(d => d.x === newX && d.y === newY) && 
+                            aiLastMove[playerId] !== (dir.name === 'up' ? 'down' : dir.name === 'down' ? 'up' : dir.name === 'left' ? 'right' : 'left')) {
+                            gameState[playerId].x = newX;
+                            gameState[playerId].y = newY;
+                            aiLastMove[playerId] = dir.name;
+                            render();
+                            moved = true;
+                            break;
+                        }
+                    }
+
+                    if (!moved) {
+                        for (let dir of directions) {
+                            const newX = x + dir.dx;
+                            const newY = y + dir.dy;
+                            if (isWalkable(newX, newY, playerId) && 
+                                !dangerZone.some(d => d.x === newX && d.y === newY) && 
+                                aiLastMove[playerId] !== (dir.name === 'up' ? 'down' : dir.name === 'down' ? 'up' : dir.name === 'left' ? 'right' : 'left')) {
+                                gameState[playerId].x = newX;
+                                gameState[playerId].y = newY;
+                                aiLastMove[playerId] = dir.name;
+                                render();
+                                break;
+                            }
+                        }
+                    }
+                }, 500);
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (!gameState || !gameState.player1.alive || !gameActive) return;
+                const { x, y } = gameState.player1;
+                let newX = x;
+                let newY = y;
+
+                switch (e.key.toLowerCase()) {
+                    case 'w': newY--; break;
+                    case 's': newY++; break;
+                    case 'a': newX--; break;
+                    case 'd': newX++; break;
+                    case ' ': 
+                        e.preventDefault();
+                        dropBomb(gameState.player1, 'player1');
+                        return;
+                }
+
+                if (isWalkable(newX, newY, 'player1')) {
+                    gameState.player1.x = newX;
+                    gameState.player1.y = newY;
+                    render();
+                }
+            });
+
+            try {
+                initializeGame();
+            } catch (error) {
+                status.textContent = 'Error loading game: ' + error.message;
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
