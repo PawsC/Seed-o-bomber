@@ -3,64 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bomberman Game</title>
+    <title>Seed'o'bomber</title>
     <style>
         body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             background-image: url('background.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            margin: 0;
-            padding: 0;
+        }
+
+        #initial-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
+            z-index: 10;
+        }
+
+        #title {
+            font-size: 60px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 3px 3px 6px #000, 0 0 10px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        #mode-options {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-btn {
+            flex: 1;
+            font-size: 48px;
+            color: #000;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            display: flex;
             align-items: center;
-            min-height: 100vh;
+            justify-content: center;
+            z-index: 1;
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            font-family: 'Comic Sans MS', cursive;
+        }
+
+        #pve-btn {
+            clip-path: polygon(0 0, 100% 100%, 0 100%);
+            background-color: rgba(76, 175, 80, 0.5);
+            justify-content: flex-start;
+            padding-left: 20%;
+        }
+
+        #pve-btn:hover {
+            background-color: rgba(76, 175, 80, 0.7);
+        }
+
+        #pvp-btn {
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+            background-color: rgba(244, 67, 54, 0.5);
+            justify-content: flex-end;
+            padding-right: 20%;
+        }
+
+        #pvp-btn:hover {
+            background-color: rgba(244, 67, 54, 0.7);
+        }
+
+        #pve-screen, #lobby-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .name-container {
+            display: flex;
+            align-items: center;
+            margin: 20px;
+        }
+
+        #name-input, #lobby-name-input {
+            padding: 10px;
+            font-size: 24px;
+            width: 250px;
+            text-align: center;
+            transition: outline 0.3s ease;
+        }
+
+        #name-input.saved, #lobby-name-input.saved {
+            outline: 2px solid #4CAF50;
+        }
+
+        #save-name-btn, #save-lobby-name-btn {
+            padding: 10px;
+            font-size: 18px;
+            width: 70px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #save-name-btn:hover, #save-lobby-name-btn:hover {
+            background-color: #45a049;
+        }
+
+        #save-name-btn.saved, #save-lobby-name-btn.saved {
+            background-color: #4CAF50;
+        }
+
+        #pick-character-sign {
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        #match-options, #emoji-options {
+            display: flex;
+            gap: 20px;
+            margin: 20px;
+        }
+
+        .match-btn, .emoji-btn, .action-btn {
+            padding: 10px 20px;
+            font-size: 24px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            pointer-events: auto;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .match-btn { background-color: #4CAF50; }
+        .match-btn:hover { background-color: #45a049; }
+        .emoji-btn { font-size: 32px; position: relative; }
+        .emoji-btn.seed { background-color: #87CEEB; }
+        .emoji-btn.smile { background-color: #FFFF00; color: black; }
+        .emoji-btn.squid { background-color: #4B0082; }
+        .emoji-btn.unicorn { background-color: #FF69B4; }
+        .emoji-btn:hover:not(.taken):not(:disabled) { transform: scale(1.1); }
+        .emoji-btn.taken { opacity: 0.5; text-decoration: line-through; cursor: not-allowed; }
+        .emoji-btn.selected { transform: scale(1.2); border: 2px solid #fff; }
+        .emoji-btn.ready { box-shadow: 0 0 10px #00FF00; }
+        .emoji-btn.ready::after {
+            content: 'âœ”';
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 16px;
+            color: #00FF00;
+        }
+        .action-btn { background-color: #2196F3; }
+        .action-btn:hover { background-color: #1976D2; }
+        .action-btn.ready { background-color: #f44336; }
+        #start-btn { background-color: #808080; display: none; }
+        #start-btn.enabled { background-color: #4CAF50; }
+        #start-btn:hover.enabled { background-color: #45a049; }
+        #back-btn, #lobby-back-btn { background-color: #f44336; }
+        #back-btn:hover, #lobby-back-btn:hover { background-color: #da190b; }
+
+        #lobby-link {
+            margin: 20px;
+            font-size: 18px;
+            color: #fff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        #lobby-link.copied::after {
+            content: ' (Copied!)';
+            color: #4CAF50;
+        }
+
+        #notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 20;
         }
 
         #status {
             text-align: center;
             padding: 20px 0;
-        }
-
-        #title {
-            font-family: Arial, sans-serif;
-            font-size: 48px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 2px 2px 4px #000;
+            display: none;
         }
 
         #instructions {
-            font-family: Arial, sans-serif;
             font-size: 18px;
             color: #fff;
             text-shadow: 1px 1px 2px #000;
         }
 
-        #board {
-            display: grid;
-            grid-template-columns: repeat(21, 60px);
-            grid-template-rows: repeat(11, 60px);
-            gap: 0;
-            position: relative;
-            width: 1260px;
-            height: 660px;
-            background-color: #87ceeb;
+        #shrink-timer {
+            font-size: 48px;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+            padding: 20px 0;
+            display: none;
         }
 
-        #board::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.5);
-            opacity: 0.5;
-            pointer-events: none;
-            filter: blur(1px) brightness(0.9);
-            z-index: -1;
+        #shrink-timer.green span { color: #00FF00; }
+        #shrink-timer.yellow span { color: #FFFF00; }
+        #shrink-timer.red span { color: #FF0000; }
+
+        #board {
+            display: none;
+            grid-gap: 0;
+            position: relative;
+            background-color: #87ceeb;
         }
 
         .cell {
@@ -73,140 +261,57 @@
             justify-content: center;
             font-size: 32px;
             cursor: pointer;
-            transition: transform 0.1s ease, background-color 0.5s ease;
+            transition: background-color 1s ease, opacity 0.5s ease;
+            position: relative;
         }
 
-        .shrinking-3 {
-            background-color: rgba(0, 0, 0, 0.2);
+        .cell .player-emoji {
+            z-index: 2;
+            position: absolute;
+            transition: left 0.1s ease, top 0.1s ease;
         }
 
-        .shrinking-2 {
-            background-color: rgba(0, 0, 0, 0.4);
+        .cell .bomb-emoji {
+            z-index: 1;
+            position: absolute;
+            font-size: 28px;
         }
 
-        .shrinking-1 {
-            background-color: rgba(0, 0, 0, 0.6);
+        .cell .warning-emoji {
+            z-index: 3;
+            position: absolute;
+            font-size: 20px;
+            color: red;
+            top: 5px;
         }
 
-        .player1 {
-            color: white;
-            text-shadow: 0 0 5px green;
-            outline: 2px solid green;
-            transition: transform 0.5s ease;
-        }
+        .shrinking-3 { background-color: #aaaaaa; }
+        .shrinking-2 { background-color: #555555; }
+        .shrinking-1 { background-color: #000000; }
+        .shrunk { opacity: 0; pointer-events: none; }
+        .player1 { color: white; text-shadow: 0 0 5px green; outline: 2px solid green; transition: transform 0.2s ease; }
+        .player2 { color: #ffff00; text-shadow: 0 0 5px yellow; outline: 2px solid yellow; transition: transform 0.2s ease; }
+        .player3 { color: #4b0082; text-shadow: 0 0 5px #4b0082; outline: 2px solid #4b0082; transition: transform 0.2s ease; }
+        .player4 { color: #ff69b4; text-shadow: 0 0 5px #ff69b4; outline: 2px solid #ff69b4; transition: transform 0.2s ease; }
+        .player-dying { transform: scale(0); transition: transform 0.5s ease; }
+        .bomb-player1, .bomb-player2, .bomb-player3, .bomb-player4, .big-bomb { transform: scale(0.8); transition: transform 1s ease; }
+        .bomb-player1 { color: white; text-shadow: 0 0 5px green; }
+        .bomb-player2 { color: #ffff00; text-shadow: 0 0 5px yellow; }
+        .bomb-player3 { color: #4b0082; text-shadow: 0 0 5px #4b0082; }
+        .bomb-player4 { color: #ff69b4; text-shadow: 0 0 5px #ff69b4; }
+        .bomb-player1.exploding, .bomb-player2.exploding, .bomb-player3.exploding, .bomb-player4.exploding, .big-bomb.exploding { transform: scale(1.2); }
+        .big-bomb { color: #ff0000; text-shadow: 0 0 5px #ff0000; font-size: 40px; }
+        .block { background-color: #8b4513; transition: transform 0.5s ease; }
+        .block.shrinking { transform: scale(0.5); }
+        .durable-block { background-color: #555555; border: 2px solid #333333; transition: transform 0.5s ease; }
+        .durable-block.hp-3 { background-color: #555555; }
+        .durable-block.hp-2 { background-color: #777777; }
+        .durable-block.hp-1 { background-color: #999999; }
+        .durable-block.shrinking { transform: scale(0.5); }
+        .exploded { outline: 3px solid red; }
+        .warning { background-color: yellow; }
 
-        .player2 {
-            color: #ffff00;
-            text-shadow: 0 0 5px yellow;
-            outline: 2px solid yellow;
-            transition: transform 0.5s ease;
-        }
-
-        .player3 {
-            color: #4b0082;
-            text-shadow: 0 0 5px #4b0082;
-            outline: 2px solid #4b0082;
-            transition: transform 0.5s ease;
-        }
-
-        .player4 {
-            color: #ff69b4;
-            text-shadow: 0 0 5px #ff69b4;
-            outline: 2px solid #ff69b4;
-            transition: transform 0.5s ease;
-        }
-
-        .player-dying {
-            transform: scale(0);
-        }
-
-        .bomb-player1 {
-            color: white;
-            text-shadow: 0 0 5px green;
-            transform: scale(0.8);
-            transition: transform 1s ease;
-        }
-
-        .bomb-player2 {
-            color: #ffff00;
-            text-shadow: 0 0 5px yellow;
-            transform: scale(0.8);
-            transition: transform 1s ease;
-        }
-
-        .bomb-player3 {
-            color: #4b0082;
-            text-shadow: 0 0 5px #4b0082;
-            transform: scale(0.8);
-            transition: transform 1s ease;
-        }
-
-        .bomb-player4 {
-            color: #ff69b4;
-            text-shadow: 0 0 5px #ff69b4;
-            transform: scale(0.8);
-            transition: transform 1s ease;
-        }
-
-        .bomb-player1.exploding,
-        .bomb-player2.exploding,
-        .bomb-player3.exploding,
-        .bomb-player4.exploding {
-            transform: scale(1.2);
-        }
-
-        .big-bomb {
-            color: #ff0000;
-            text-shadow: 0 0 5px #ff0000;
-            font-size: 40px;
-            transform: scale(0.8);
-            transition: transform 1s ease;
-        }
-
-        .big-bomb.exploding {
-            transform: scale(1.2);
-        }
-
-        .block {
-            background-color: #8b4513;
-            transition: transform 0.5s ease;
-        }
-
-        .block.shrinking {
-            transform: scale(0.5);
-        }
-
-        .durable-block {
-            background-color: #555555;
-            border: 2px solid #333333;
-            transition: transform 0.5s ease;
-        }
-
-        .durable-block.hp-3 {
-            background-color: #555555;
-        }
-
-        .durable-block.hp-2 {
-            background-color: #777777;
-        }
-
-        .durable-block.hp-1 {
-            background-color: #999999;
-        }
-
-        .durable-block.shrinking {
-            transform: scale(0.5);
-        }
-
-        .exploded {
-            outline: 3px solid red;
-        }
-
-        .warning {
-            background-color: yellow;
-        }
-
-        #death-screen {
+        #death-screen, #win-screen {
             position: fixed;
             top: 0;
             left: 0;
@@ -223,845 +328,1261 @@
             z-index: 10;
         }
 
-        #player1-score {
+        #player1-score, #player2-score, #player3-score, #player4-score {
             position: absolute;
-            left: 50px;
-            top: 50px;
-            font-family: Arial, sans-serif;
             font-size: 24px;
             font-weight: bold;
-            color: white;
             text-shadow: 2px 2px 4px black;
             background-color: rgba(0, 0, 0, 0.5);
             padding: 5px 10px;
             border-radius: 5px;
+            display: none;
         }
 
-        #player2-score {
-            position: absolute;
-            right: 50px;
-            top: 50px;
-            font-family: Arial, sans-serif;
-            font-size: 24px;
-            font-weight: bold;
-            color: #ffff00;
-            text-shadow: 2px 2px 4px black;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        #player3-score {
-            position: absolute;
-            left: 50px;
-            bottom: 50px;
-            font-family: Arial, sans-serif;
-            font-size: 24px;
-            font-weight: bold;
-            color: #4b0082;
-            text-shadow: 2px 2px 4px black;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        #player4-score {
-            position: absolute;
-            right: 50px;
-            bottom: 50px;
-            font-family: Arial, sans-serif;
-            font-size: 24px;
-            font-weight: bold;
-            color: #ff69b4;
-            text-shadow: 2px 2px 4px black;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
+        #player1-score { left: 50px; top: 50px; color: white; }
+        #player2-score { right: 50px; top: 50px; color: #ffff00; }
+        #player3-score { left: 50px; bottom: 50px; color: #4b0082; }
+        #player4-score { right: 50px; bottom: 50px; color: #ff69b4; }
     </style>
 </head>
 <body>
-    <div id="player1-score">P1: 0</div>
-    <div id="player2-score">P2: 0</div>
-    <div id="status">
-        <div id="title">SEEDOBOMBER</div>
-        <div id="instructions">Playing Seedobomber! (WASD to move, Space to drop bomb)</div>
+    <div id="title">Seed'o'bomber</div>
+    <div id="initial-screen">
+        <div id="mode-options">
+            <div id="pve-btn" class="mode-btn">PvE</div>
+            <div id="pvp-btn" class="mode-btn">PvP</div>
+        </div>
     </div>
+    <div id="pve-screen">
+        <div>Enter Your Name:</div>
+        <div class="name-container">
+            <input type="text" id="name-input" placeholder="Player1" maxlength="15">
+            <button id="save-name-btn">Save</button>
+        </div>
+        <div>Choose Match Type:</div>
+        <div id="match-options">
+            <button class="match-btn" data-players="2">1v1</button>
+            <button class="match-btn" data-players="3">1v2</button>
+            <button class="match-btn" data-players="4">1v3</button>
+        </div>
+        <button id="back-btn" class="action-btn">Back</button>
+    </div>
+    <div id="lobby-screen">
+        <div class="name-container">
+            <input type="text" id="lobby-name-input" placeholder="Enter your name" maxlength="15">
+            <button id="save-lobby-name-btn">Save</button>
+        </div>
+        <div id="pick-character-sign">Pick your character:</div>
+        <div id="emoji-options">
+            <button class="emoji-btn seed" data-emoji="ðŸŒ±" disabled>ðŸŒ±</button>
+            <button class="emoji-btn smile" data-emoji="ðŸ˜Š">ðŸ˜Š</button>
+            <button class="emoji-btn squid" data-emoji="ðŸ¦‘">ðŸ¦‘</button>
+            <button class="emoji-btn unicorn" data-emoji="ðŸ¦„">ðŸ¦„</button>
+        </div>
+        <div id="status">
+            <div id="instructions">Playing Seedobomber (WASD to move, Space to drop bomb)</div>
+        </div>
+        <button id="ready-btn" class="action-btn">Ready</button>
+        <button id="start-btn" class="action-btn">Start Game</button>
+        <div id="lobby-link"></div>
+        <button id="lobby-back-btn" class="action-btn">Back</button>
+    </div>
+    <div id="player1-score"></div>
+    <div id="player2-score"></div>
     <div id="board"></div>
-    <div id="player3-score">P3: 0</div>
-    <div id="player4-score">P4: 0</div>
+    <div id="player3-score"></div>
+    <div id="player4-score"></div>
+    <div id="shrink-timer">Time before next shrinkage: <span>10</span> seconds</div>
     <div id="death-screen">
         <div id="death-message"></div>
-        <div>New game will start in <span id="countdown">3</span>...</div>
+        <div>Returning to previous screen in <span id="countdown">3</span>...</div>
     </div>
+    <div id="win-screen">
+        <div id="win-message"></div>
+        <div>Returning to lobby in <span id="win-countdown">3</span>...</div>
+    </div>
+    <div id="notification"></div>
 
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const status = document.getElementById('status');
-            const board = document.getElementById('board');
-            const deathScreen = document.getElementById('death-screen');
-            const deathMessage = document.getElementById('death-message');
-            const countdownElement = document.getElementById('countdown');
-            const player1Score = document.getElementById('player1-score');
-            const player2Score = document.getElementById('player2-score');
-            const player3Score = document.getElementById('player3-score');
-            const player4Score = document.getElementById('player4-score');
-            let rows = 11;
-            let cols = 21;
-            let gameState;
-            let startTime;
-            let gameActive = true;
-            let scores = { player1: 0, player2: 0, player3: 0, player4: 0 };
-            let lastBombTime = { player1: 0, player2: 0, player3: 0, player4: 0 };
-            let shrinkTimerId = null;
-            let shrinkIntervalId = null;
-            let aiLastMove = { player2: null, player3: null, player4: null };
+        const socket = io('https://seedobomber.com', {
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            pingInterval: 1000,
+            pingTimeout: 2000
+        });
+        let rows = 11, cols = 21, playerId = null, gameState = null, pveGameState = null;
+        const cellSize = 60;
 
-            function initializeGame() {
-                rows = 11;
-                cols = 21;
-                board.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
-                board.style.gridTemplateRows = `repeat(${rows}, 60px)`;
-                board.style.width = `${cols * 60}px`;
-                board.style.height = `${rows * 60}px`;
+        const initialScreen = document.getElementById('initial-screen');
+        const pveScreen = document.getElementById('pve-screen');
+        const lobbyScreen = document.getElementById('lobby-screen');
+        const nameInput = document.getElementById('name-input');
+        const lobbyNameInput = document.getElementById('lobby-name-input');
+        const saveNameBtn = document.getElementById('save-name-btn');
+        const saveLobbyNameBtn = document.getElementById('save-lobby-name-btn');
+        const pickCharacterSign = document.getElementById('pick-character-sign');
+        const status = document.getElementById('status');
+        const board = document.getElementById('board');
+        const deathScreen = document.getElementById('death-screen');
+        const winScreen = document.getElementById('win-screen');
+        const deathMessage = document.getElementById('death-message');
+        const winMessage = document.getElementById('win-message');
+        const countdownElement = document.getElementById('countdown');
+        const winCountdownElement = document.getElementById('win-countdown');
+        const player1Score = document.getElementById('player1-score');
+        const player2Score = document.getElementById('player2-score');
+        const player3Score = document.getElementById('player3-score');
+        const player4Score = document.getElementById('player4-score');
+        const lobbyLink = document.getElementById('lobby-link');
+        const notification = document.getElementById('notification');
+        const startBtn = document.getElementById('start-btn');
+        const readyBtn = document.getElementById('ready-btn');
+        const shrinkTimer = document.getElementById('shrink-timer');
+        const scoreElements = [player1Score, player2Score, player3Score, player4Score];
 
-                gameState = {
-                    player1: { x: 0, y: 0, alive: true },
-                    player2: { x: cols - 1, y: 0, alive: true },
-                    player3: { x: 0, y: rows - 1, alive: true },
-                    player4: { x: cols - 1, y: rows - 1, alive: true },
-                    bombs: [],
-                    bigBombs: [],
-                    durableBlocks: [],
-                    blocks: [],
-                    exploded: []
-                };
+        let lobbyState = { creator: null, players: [], link: null };
+        let isCreator = false;
+        let currentPlayer = null;
+        let lastBombDropTime = 0;
+        let shrinkInterval = null;
+        let shrinkCountdown = 10;
+        let isShrinking = false;
+        let animatedShrunkCells = [];
+        let isConnected = false;
+        let keyState = { w: false, s: false, a: false, d: false };
+        let aiInterval = null;
+        let lastMoveTime = 0;
+        const moveCooldown = 100;
+        let hasShrunk = false;
 
-                gameState.bigBombs = generateBigBombs();
-                gameState.durableBlocks = generateDurableBlocks();
-                gameState.blocks = generateBlocks();
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + date.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
 
-                startTime = Date.now();
-                gameActive = true;
-                setupBoard();
-                render();
+        function getCookie(name) {
+            const cname = name + "=";
+            const decodedCookie = decodeURIComponent(document.cookie);
+            const ca = decodedCookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1);
+                if (c.indexOf(cname) === 0) return c.substring(cname.length, c.length);
+            }
+            return "";
+        }
+
+        function saveNickname(input, btn) {
+            const name = input.value.trim();
+            if (name) {
+                setCookie('playerNickname', name, 30);
+                input.classList.add('saved');
+                btn.textContent = 'âœ” Saved';
+                btn.classList.add('saved');
+                setTimeout(() => {
+                    input.classList.remove('saved');
+                    btn.textContent = 'Save';
+                    btn.classList.remove('saved');
+                }, 2000);
+                if (pveScreen.style.display === 'flex' && pveGameState) {
+                    pveGameState.players['player1'].name = name;
+                    updateScores();
+                } else if (isConnected) {
+                    socket.emit('updateName', name);
+                }
+            }
+        }
+
+        socket.on('connect', () => {
+            playerId = socket.id;
+            isConnected = true;
+            showNotification('Connected to the server!');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const lobbyId = urlParams.get('lobby');
+            if (lobbyId) {
+                const name = getCookie('playerNickname') || 'Player';
+                socket.emit('joinLobby', { lobbyId, name });
+            } else {
+                showInitialScreen();
+            }
+        });
+
+        socket.on('connect_error', (error) => {
+            isConnected = false;
+            showNotification('Failed to connect to the server. Retrying...');
+        });
+
+        socket.on('reconnect', (attempt) => {
+            isConnected = true;
+            showNotification('Reconnected to the server!');
+        });
+
+        socket.on('reconnect_failed', () => {
+            isConnected = false;
+            showNotification('Failed to reconnect to the server. Please refresh the page.');
+        });
+
+        socket.on('lobbyUpdate', (newLobbyState) => {
+            lobbyState = newLobbyState;
+            if (lobbyState.error) {
+                showNotification(lobbyState.error);
+                showInitialScreen();
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                updateLobbyUI();
                 updateScores();
-                startShrinkTimer();
-                startAI('player2');
-                startAI('player3');
-                startAI('player4');
-            }
-
-            function generateBigBombs() {
-                const bigBombs = [];
-                const numBombs = Math.floor(Math.random() * 3) + 3;
-                const centerX = Math.floor(cols / 2);
-                const centerY = Math.floor(rows / 2);
-                const possiblePositions = [];
-
-                for (let y = centerY - 4; y <= centerY + 4; y++) {
-                    for (let x = centerX - 8; x <= centerX + 8; x++) {
-                        if (x >= 0 && x < cols && y >= 0 && y < rows && 
-                            !(x <= 2 && y <= 2) && !(x >= cols - 3 && y <= 2) &&
-                            !(x <= 2 && y >= rows - 3) && !(x >= cols - 3 && y >= rows - 3)) {
-                            possiblePositions.push({ x, y });
-                        }
-                    }
-                }
-
-                for (let i = 0; i < numBombs && possiblePositions.length > 0; i++) {
-                    const index = Math.floor(Math.random() * possiblePositions.length);
-                    bigBombs.push({ x: possiblePositions[index].x, y: possiblePositions[index].y, active: true });
-                    possiblePositions.splice(index, 1);
-                }
-                return bigBombs;
-            }
-
-            function generateDurableBlocks() {
-                const durableBlocks = [];
-                const numBlocks = Math.floor(Math.random() * 19) + 12;
-                const centerX = Math.floor(cols / 2);
-                const centerY = Math.floor(rows / 2);
-                const possiblePositions = [];
-
-                for (let y = centerY - 3; y <= centerY + 3; y++) {
-                    for (let x = centerX - 5; x <= centerX + 5; x++) {
-                        if (x >= 0 && x < cols && y >= 0 && y < rows && 
-                            !(x <= 2 && y <= 2) && !(x >= cols - 3 && y <= 2) &&
-                            !(x <= 2 && y >= rows - 3) && !(x >= cols - 3 && y >= rows - 3) &&
-                            !gameState.bigBombs.some(b => b.x === x && b.y === y && b.active)) {
-                            possiblePositions.push({ x, y });
-                        }
-                    }
-                }
-
-                for (let i = 0; i < numBlocks && possiblePositions.length > 0; i++) {
-                    const index = Math.floor(Math.random() * possiblePositions.length);
-                    durableBlocks.push({ x: possiblePositions[index].x, y: possiblePositions[index].y, hp: 3 });
-                    possiblePositions.splice(index, 1);
-                }
-                return durableBlocks;
-            }
-
-            function triggerBigBomb(x, y) {
-                if (!gameActive || !gameState.bigBombs.some(b => b.x === x && b.y === y && b.active)) return;
-
-                const explosionArea = [];
-                for (let i = 0; i < cols; i++) explosionArea.push({ x: i, y });
-                for (let j = 0; j < rows; j++) explosionArea.push({ x, y: j });
-
-                const bombCell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
-                if (bombCell) bombCell.classList.add('exploding');
-
-                setTimeout(() => {
-                    if (!gameActive) return;
-
-                    explosionArea.forEach(pos => {
-                        const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
-                        if (cell) cell.classList.add('warning');
-                    });
-
-                    setTimeout(() => {
-                        if (!gameActive) return;
-                        const bombIndex = gameState.bigBombs.findIndex(b => b.x === x && b.y === y && b.active);
-                        if (bombIndex === -1) return;
-
-                        gameState.bigBombs[bombIndex].active = false;
-                        if (bombCell) bombCell.classList.remove('exploding', 'warning');
-
-                        gameState.bombs.push({ x, y, owner: 'bigBomb' });
-                        gameState.exploded = [...new Set(explosionArea.map(pos => `${pos.x},${pos.y}`))].map(pos => {
-                            const [x, y] = pos.split(',').map(Number);
-                            return { x, y };
-                        });
-
-                        explosionArea.forEach(pos => {
-                            const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
-                            if (cell) cell.classList.remove('warning');
-                        });
-
-                        const blocksToShrink = gameState.blocks.filter(block =>
-                            explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
-                        );
-                        blocksToShrink.forEach(block => {
-                            const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
-                            if (blockCell) blockCell.classList.add('shrinking');
-                        });
-
-                        const durableBlocksToDestroy = gameState.durableBlocks.filter(block =>
-                            explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
-                        );
-                        durableBlocksToDestroy.forEach(block => {
-                            const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
-                            if (blockCell) blockCell.classList.add('shrinking');
-                        });
-
-                        const bigBombsToTrigger = gameState.bigBombs.filter(b => 
-                            b.active && explosionArea.some(exp => exp.x === b.x && exp.y === b.y) && (b.x !== x || b.y !== y)
-                        );
-                        bigBombsToTrigger.forEach(bomb => triggerBigBomb(bomb.x, bomb.y));
-
-                        setTimeout(() => {
-                            if (!gameActive) return;
-                            gameState.blocks = gameState.blocks.filter(block =>
-                                !explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
-                            );
-                            gameState.durableBlocks = gameState.durableBlocks.filter(block =>
-                                !explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
-                            );
-
-                            let playersHit = {
-                                player1: gameState.player1.alive && explosionArea.some(exp => exp.x === gameState.player1.x && exp.y === gameState.player1.y),
-                                player2: gameState.player2.alive && explosionArea.some(exp => exp.x === gameState.player2.x && exp.y === gameState.player2.y),
-                                player3: gameState.player3.alive && explosionArea.some(exp => exp.x === gameState.player3.x && exp.y === gameState.player3.y),
-                                player4: gameState.player4.alive && explosionArea.some(exp => exp.x === gameState.player4.x && exp.y === gameState.player4.y)
-                            };
-
-                            Object.keys(playersHit).forEach(player => {
-                                if (playersHit[player]) {
-                                    gameState[player].alive = false;
-                                    const playerCell = document.querySelector(`.cell[data-x="${gameState[player].x}"][data-y="${gameState[player].y}"]`);
-                                    if (playerCell) {
-                                        playerCell.classList.add('player-dying');
-                                        setTimeout(() => {
-                                            playerCell.innerHTML = '';
-                                            playerCell.classList.remove(player, 'player-dying');
-                                        }, 500);
-                                    }
-                                }
-                            });
-
-                            const alivePlayers = ['player1', 'player2', 'player3', 'player4'].filter(p => gameState[p].alive);
-                            if (alivePlayers.length === 1) {
-                                const winner = alivePlayers[0];
-                                scores[winner]++;
-                                gameActive = false;
-                                setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins!`), 500);
-                            } else if (!gameState.player1.alive) {
-                                gameActive = false;
-                                const aliveOpponents = ['player2', 'player3', 'player4'].filter(p => gameState[p].alive);
-                                if (aliveOpponents.length > 0) {
-                                    const winner = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
-                                    scores[winner]++;
-                                    setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins! P1 died.`), 500);
-                                } else {
-                                    setTimeout(() => showDeathScreen('P1 died, no winners!'), 500);
-                                }
-                            }
-
-                            gameState.bombs = gameState.bombs.filter(b => b.x !== x || b.y !== y);
-                            render();
-                            setTimeout(() => {
-                                gameState.exploded = [];
-                                render();
-                            }, 500);
-                        }, 500);
-                    }, 1000);
-                }, 500);
-            }
-
-            function getExplosionArea(x, y) {
-                const explosionRange = 1;
-                const explosionArea = [{ x, y }];
-                const directions = [
-                    { dx: -1, dy: 0 },
-                    { dx: 1, dy: 0 },
-                    { dx: 0, dy: -1 },
-                    { dx: 0, dy: 1 }
-                ];
-
-                directions.forEach(dir => {
-                    const newX = x + dir.dx;
-                    const newY = y + dir.dy;
-                    if (newX >= 0 && newX < cols && newY >= 0 && newY < rows) {
-                        explosionArea.push({ x: newX, y: newY });
-                    }
-                });
-
-                return explosionArea;
-            }
-
-            function generateBlocks() {
-                const blocks = [];
-                for (let y = 0; y < rows; y++) {
-                    for (let x = 0; x < cols; x++) {
-                        if (Math.random() < 0.7 && 
-                            !(x <= 2 && y <= 2) && !(x >= cols - 3 && y <= 2) &&
-                            !(x <= 2 && y >= rows - 3) && !(x >= cols - 3 && y >= rows - 3) &&
-                            !gameState.bigBombs.some(b => b.x === x && b.y === y && b.active) &&
-                            !gameState.durableBlocks.some(b => b.x === x && b.y === y)) {
-                            blocks.push({ x, y });
-                        }
-                    }
-                }
-                return blocks;
-            }
-
-            function setupBoard() {
-                board.innerHTML = '';
-                for (let y = 0; y < rows; y++) {
-                    for (let x = 0; x < cols; x++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'cell';
-                        cell.dataset.x = x;
-                        cell.dataset.y = y;
-                        board.appendChild(cell);
-                    }
+                if (lobbyScreen.style.display !== 'flex') {
+                    showLobbyScreen();
                 }
             }
+        });
 
-            function render() {
-                const cells = document.querySelectorAll('.cell');
-                cells.forEach(cell => {
-                    cell.innerHTML = '';
-                    cell.classList.remove('player1', 'player2', 'player3', 'player4', 'bomb-player1', 'bomb-player2', 'bomb-player3', 'bomb-player4', 'big-bomb', 'block', 'durable-block', 'hp-1', 'hp-2', 'hp-3', 'exploded', 'exploding', 'shrinking', 'shrinking-1', 'shrinking-2', 'shrinking-3', 'player-dying', 'warning');
-                });
+        socket.on('gameState', (newGameState) => {
+            const previousShrunkCells = gameState ? [...gameState.shrunkCells] : [];
+            gameState = newGameState;
+            pveGameState = null;
 
-                gameState.blocks.forEach(block => {
-                    const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
-                    if (blockCell) blockCell.classList.add('block');
-                });
+            const newShrunkCells = gameState.shrunkCells.filter(cell =>
+                !previousShrunkCells.some(s => s.x === cell.x && s.y === cell.y) &&
+                !animatedShrunkCells.some(s => s.x === cell.x && s.y === cell.y)
+            );
 
-                gameState.durableBlocks.forEach(block => {
-                    const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
-                    if (blockCell) {
-                        blockCell.classList.add('durable-block', `hp-${block.hp}`);
-                    }
-                });
+            if (newShrunkCells.length > 0) {
+                animatedShrunkCells = animatedShrunkCells.concat(newShrunkCells);
+                animateShrink(newShrunkCells);
+            }
 
-                gameState.bombs.forEach(bomb => {
-                    const bombCell = document.querySelector(`.cell[data-x="${bomb.x}"][data-y="${bomb.y}"]`);
-                    if (bombCell) {
-                        bombCell.innerHTML = '💣';
-                        bombCell.classList.add(bomb.owner === 'player1' ? 'bomb-player1' : 
-                                               bomb.owner === 'player2' ? 'bomb-player2' : 
-                                               bomb.owner === 'player3' ? 'bomb-player3' : 
-                                               bomb.owner === 'player4' ? 'bomb-player4' : 'big-bomb');
-                    }
-                });
+            render();
+            updateScores();
+            checkBorderKill();
+            checkGameOver();
+        });
 
-                gameState.bigBombs.forEach(bigBomb => {
-                    if (bigBomb.active) {
-                        const bigBombCell = document.querySelector(`.cell[data-x="${bigBomb.x}"][data-y="${bigBomb.y}"]`);
-                        if (bigBombCell) {
-                            bigBombCell.innerHTML = '💣';
-                            bigBombCell.classList.add('big-bomb');
-                        }
-                    }
-                });
+        socket.on('gameStarted', () => {
+            initializeGame();
+            startShrinkTimer();
+        });
 
-                gameState.exploded.forEach(pos => {
-                    const explodedCell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
-                    if (explodedCell) explodedCell.classList.add('exploded');
-                });
-
-                if (gameState.player1.alive) {
-                    const player1Cell = document.querySelector(`.cell[data-x="${gameState.player1.x}"][data-y="${gameState.player1.y}"]`);
-                    if (player1Cell) {
-                        player1Cell.innerHTML = '🌱';
-                        player1Cell.classList.add('player1');
+        socket.on('gameOver', (result) => {
+            stopShrinkTimer();
+            stopAI();
+            updateScores();
+            winMessage.textContent = result.message;
+            winScreen.style.display = 'flex';
+            board.style.display = 'none';
+            status.style.display = 'none';
+            shrinkTimer.style.display = 'none';
+            scoreElements.forEach(el => el.style.display = 'none');
+            let countdown = 3;
+            winCountdownElement.textContent = countdown;
+            const interval = setInterval(() => {
+                countdown--;
+                winCountdownElement.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    winScreen.style.display = 'none';
+                    pveGameState = null;
+                    gameState = null;
+                    showLobbyScreen();
+                    if (isConnected) {
+                        socket.emit('requestLobbyUpdate');
                     }
                 }
+            }, 1000);
+        });
 
-                if (gameState.player2.alive) {
-                    const player2Cell = document.querySelector(`.cell[data-x="${gameState.player2.x}"][data-y="${gameState.player2.y}"]`);
-                    if (player2Cell) {
-                        player2Cell.innerHTML = '😊';
-                        player2Cell.classList.add('player2');
-                    }
+        socket.on('playerJoined', (playerName) => {
+            if (gameState) return;
+            showNotification(`A new player has joined via a link! (${playerName})`);
+        });
+
+        socket.on('resetShrinkTimer', () => {
+            stopShrinkTimer();
+            shrinkCountdown = 10;
+            isShrinking = false;
+            hasShrunk = false;
+            animatedShrunkCells = [];
+            shrinkTimer.innerHTML = `Time before next shrinkage: <span>10</span> seconds`;
+            shrinkTimer.style.display = 'none';
+        });
+
+        function showInitialScreen() {
+            initialScreen.style.display = 'flex';
+            pveScreen.style.display = 'none';
+            lobbyScreen.style.display = 'none';
+            board.style.display = 'none';
+            status.style.display = 'none';
+            shrinkTimer.style.display = 'none';
+            deathScreen.style.display = 'none';
+            winScreen.style.display = 'none';
+            scoreElements.forEach(el => el.style.display = 'none');
+            stopAI();
+        }
+
+        function showPveScreen() {
+            initialScreen.style.display = 'none';
+            pveScreen.style.display = 'flex';
+            lobbyScreen.style.display = 'none';
+            board.style.display = 'none';
+            status.style.display = 'none';
+            shrinkTimer.style.display = 'none';
+            deathScreen.style.display = 'none';
+            winScreen.style.display = 'none';
+            scoreElements.forEach(el => el.style.display = 'none');
+            const savedName = getCookie('playerNickname');
+            if (savedName) nameInput.value = savedName;
+            stopAI();
+        }
+
+        function showLobbyScreen() {
+            initialScreen.style.display = 'none';
+            pveScreen.style.display = 'none';
+            lobbyScreen.style.display = 'flex';
+            board.style.display = 'none';
+            status.style.display = 'none';
+            shrinkTimer.style.display = 'none';
+            deathScreen.style.display = 'none';
+            winScreen.style.display = 'none';
+            scoreElements.forEach(el => el.style.display = 'none');
+            startBtn.style.display = isCreator ? 'block' : 'none';
+            readyBtn.style.display = isCreator ? 'none' : 'block';
+            pickCharacterSign.style.display = isCreator ? 'none' : 'block';
+            const savedName = getCookie('playerNickname');
+            if (savedName) lobbyNameInput.value = savedName;
+            updateScores();
+            stopAI();
+            stopShrinkTimer();
+        }
+
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.style.display = 'block';
+            setTimeout(() => notification.style.display = 'none', 3000);
+        }
+
+        function updateLobbyUI() {
+            const emojiButtons = document.querySelectorAll('.emoji-btn');
+            currentPlayer = lobbyState.players.find(p => p.id === playerId);
+            isCreator = lobbyState.players[0]?.id === playerId;
+
+            if (currentPlayer && !lobbyNameInput.value) {
+                lobbyNameInput.value = currentPlayer.name || 'Player';
+            }
+
+            emojiButtons.forEach(btn => {
+                const emoji = btn.dataset.emoji;
+                const player = lobbyState.players.find(p => p.emoji === emoji);
+                btn.classList.toggle('selected', currentPlayer?.emoji === emoji);
+                btn.classList.toggle('ready', player?.ready && player?.emoji === emoji);
+                btn.disabled = (emoji === 'ðŸŒ±' && !isCreator) || 
+                              (isCreator && emoji !== 'ðŸŒ±') || 
+                              lobbyState.players.some(p => p.id !== playerId && p.emoji === emoji);
+                btn.classList.toggle('taken', lobbyState.players.some(p => p.id !== playerId && p.emoji === emoji));
+            });
+
+            readyBtn.textContent = currentPlayer?.ready ? 'Unready' : 'Ready';
+            readyBtn.classList.toggle('ready', currentPlayer?.ready);
+            readyBtn.disabled = !currentPlayer?.emoji;
+            startBtn.style.display = isCreator ? 'block' : 'none';
+            readyBtn.style.display = isCreator ? 'none' : 'block';
+            pickCharacterSign.style.display = isCreator ? 'none' : 'block';
+            if (isCreator) {
+                const canStart = lobbyState.players.length >= 2 && lobbyState.players.every(p => p.ready || p.id === playerId);
+                startBtn.disabled = !canStart;
+                startBtn.classList.toggle('enabled', canStart);
+            }
+            lobbyLink.textContent = lobbyState.link ? `Lobby Link: https://seedobomber.com/?lobby=${lobbyState.link}` : 'Generating lobby link...';
+        }
+
+        function initializeGame() {
+            board.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+            board.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+            board.style.width = `${cols * cellSize}px`;
+            board.style.height = `${rows * cellSize}px`;
+            setupBoard();
+            board.style.display = 'grid';
+            status.style.display = 'block';
+            shrinkTimer.style.display = 'block';
+            shrinkTimer.innerHTML = `Time before next shrinkage: <span>10</span> seconds`;
+            lobbyScreen.style.display = 'none';
+            pveScreen.style.display = 'none';
+            animatedShrunkCells = [];
+            updateScoreVisibility();
+            shrinkCountdown = 10;
+            isShrinking = false;
+            hasShrunk = false;
+            updateShrinkTimer();
+            keyState = { w: false, s: false, a: false, d: false };
+            lastMoveTime = 0;
+        }
+
+        function setupBoard() {
+            board.innerHTML = '';
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    board.appendChild(cell);
                 }
-
-                if (gameState.player3.alive) {
-                    const player3Cell = document.querySelector(`.cell[data-x="${gameState.player3.x}"][data-y="${gameState.player3.y}"]`);
-                    if (player3Cell) {
-                        player3Cell.innerHTML = '🦑';
-                        player3Cell.classList.add('player3');
-                    }
-                }
-
-                if (gameState.player4.alive) {
-                    const player4Cell = document.querySelector(`.cell[data-x="${gameState.player4.x}"][data-y="${gameState.player4.y}"]`);
-                    if (player4Cell) {
-                        player4Cell.innerHTML = '🦄';
-                        player4Cell.classList.add('player4');
-                    }
-                }
             }
+        }
 
-            function updateScores() {
-                player1Score.textContent = `P1: ${scores.player1}`;
-                player2Score.textContent = `P2: ${scores.player2}`;
-                player3Score.textContent = `P3: ${scores.player3}`;
-                player4Score.textContent = `P4: ${scores.player4}`;
-            }
-
-            function isWalkable(x, y, player) {
-                return x >= 0 && x < cols && y >= 0 && y < rows &&
-                    !gameState.blocks.some(b => b.x === x && b.y === y) &&
-                    !gameState.durableBlocks.some(b => b.x === x && b.y === y) &&
-                    !gameState.bombs.some(b => b.x === x && b.y === y) &&
-                    !gameState.bigBombs.some(b => b.active && b.x === x && b.y === y) &&
-                    !['player1', 'player2', 'player3', 'player4'].some(p => 
-                        p !== player && gameState[p].alive && gameState[p].x === x && gameState[p].y === y
-                    );
-            }
-
-            function dropBomb(player, playerId) {
-                if (!gameActive || !gameState[playerId].alive) return;
-                const now = Date.now();
-                if (now - lastBombTime[playerId] < 1000) return;
-                lastBombTime[playerId] = now;
-
-                const { x, y } = gameState[playerId];
-                gameState.bombs.push({ x, y, owner: playerId });
-                render();
-
-                setTimeout(() => {
-                    if (!gameActive) return;
-                    const bombCell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
-                    if (bombCell) bombCell.classList.add('exploding');
-
-                    setTimeout(() => {
-                        if (!gameActive) return;
-                        const explosionArea = getExplosionArea(x, y);
-                        gameState.exploded = explosionArea;
-
-                        const blocksToShrink = gameState.blocks.filter(block =>
-                            explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
-                        );
-                        blocksToShrink.forEach(block => {
-                            const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
-                            if (blockCell) blockCell.classList.add('shrinking');
-                        });
-
-                        const durableBlocksHit = gameState.durableBlocks.filter(block =>
-                            explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
-                        );
-                        durableBlocksHit.forEach(block => {
-                            block.hp--;
-                            const blockCell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
-                            if (block.hp <= 0 && blockCell) blockCell.classList.add('shrinking');
-                        });
-
-                        gameState.bigBombs.forEach(bigBomb => {
-                            if (bigBomb.active && explosionArea.some(exp => exp.x === bigBomb.x && exp.y === bigBomb.y)) {
-                                triggerBigBomb(bigBomb.x, bigBomb.y);
-                            }
-                        });
-
-                        setTimeout(() => {
-                            if (!gameActive) return;
-                            gameState.blocks = gameState.blocks.filter(block =>
-                                !explosionArea.some(exp => exp.x === block.x && exp.y === block.y)
-                            );
-                            gameState.durableBlocks = gameState.durableBlocks.filter(block => block.hp > 0);
-
-                            let playersHit = {
-                                player1: gameState.player1.alive && explosionArea.some(exp => exp.x === gameState.player1.x && exp.y === gameState.player1.y),
-                                player2: gameState.player2.alive && explosionArea.some(exp => exp.x === gameState.player2.x && exp.y === gameState.player2.y),
-                                player3: gameState.player3.alive && explosionArea.some(exp => exp.x === gameState.player3.x && exp.y === gameState.player3.y),
-                                player4: gameState.player4.alive && explosionArea.some(exp => exp.x === gameState.player4.x && exp.y === gameState.player4.y)
-                            };
-
-                            Object.keys(playersHit).forEach(player => {
-                                if (playersHit[player]) {
-                                    gameState[player].alive = false;
-                                    const playerCell = document.querySelector(`.cell[data-x="${gameState[player].x}"][data-y="${gameState[player].y}"]`);
-                                    if (playerCell) {
-                                        playerCell.classList.add('player-dying');
-                                        setTimeout(() => {
-                                            playerCell.innerHTML = '';
-                                            playerCell.classList.remove(player, 'player-dying');
-                                        }, 500);
-                                    }
-                                }
-                            });
-
-                            const alivePlayers = ['player1', 'player2', 'player3', 'player4'].filter(p => gameState[p].alive);
-                            if (alivePlayers.length === 1) {
-                                const winner = alivePlayers[0];
-                                scores[winner]++;
-                                gameActive = false;
-                                setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins!`), 500);
-                            } else if (!gameState.player1.alive) {
-                                gameActive = false;
-                                const aliveOpponents = ['player2', 'player3', 'player4'].filter(p => gameState[p].alive);
-                                if (aliveOpponents.length > 0) {
-                                    const winner = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
-                                    scores[winner]++;
-                                    setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins! P1 died.`), 500);
-                                } else {
-                                    setTimeout(() => showDeathScreen('P1 died, no winners!'), 500);
-                                }
-                            }
-
-                            gameState.bombs = gameState.bombs.filter(b => b.x !== x || b.y !== y);
-                            render();
-                            setTimeout(() => {
-                                gameState.exploded = [];
-                                render();
-                            }, 500);
-                        }, 500);
-                    }, 500);
-                }, 500);
-            }
-
-            function showDeathScreen(message) {
-                deathMessage.textContent = message;
-                deathScreen.style.display = 'flex';
-                board.style.display = 'none';
-                status.style.display = 'none';
-                player1Score.style.display = 'none';
-                player2Score.style.display = 'none';
-                player3Score.style.display = 'none';
-                player4Score.style.display = 'none';
-                let countdown = 3;
-                countdownElement.textContent = countdown;
-
-                const interval = setInterval(() => {
-                    countdown--;
-                    countdownElement.textContent = countdown;
-                    if (countdown <= 0) {
-                        clearInterval(interval);
-                        if (shrinkTimerId) clearTimeout(shrinkTimerId);
-                        if (shrinkIntervalId) clearInterval(shrinkIntervalId);
-                        deathScreen.style.display = 'none';
-                        board.style.display = 'grid';
-                        status.style.display = 'block';
-                        player1Score.style.display = 'block';
-                        player2Score.style.display = 'block';
-                        player3Score.style.display = 'block';
-                        player4Score.style.display = 'block';
-                        initializeGame();
-                    }
-                }, 1000);
-            }
-
-            function startShrinkTimer() {
-                shrinkTimerId = setTimeout(() => {
-                    shrinkIntervalId = setInterval(() => {
-                        if (!gameActive || (rows <= 1 && cols <= 1)) {
-                            clearInterval(shrinkIntervalId);
-                            return;
-                        }
-
-                        const oldRows = rows;
-                        const oldCols = cols;
-                        const shrinkingEdges = [];
-
-                        // Define shrinking edges
-                        if (rows > 1) {
-                            // Top and bottom rows
-                            for (let x = 0; x < oldCols; x++) {
-                                shrinkingEdges.push({ x, y: 0 });
-                                shrinkingEdges.push({ x, y: oldRows - 1 });
-                            }
-                            // Left and right columns (excluding corners already counted)
-                            for (let y = 1; y < oldRows - 1; y++) {
-                                shrinkingEdges.push({ x: 0, y });
-                                shrinkingEdges.push({ x: oldCols - 1, y });
-                            }
-                        } else {
-                            // When rows = 1, shrink leftmost column
-                            shrinkingEdges.push({ x: 0, y: 0 });
-                        }
-
-                        // Kill players on shrinking edges immediately
-                        ['player1', 'player2', 'player3', 'player4'].forEach(player => {
-                            if (gameState[player].alive) {
-                                const { x, y } = gameState[player];
-                                if (shrinkingEdges.some(edge => edge.x === x && edge.y === y)) {
-                                    gameState[player].alive = false;
-                                    const playerCell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
-                                    if (playerCell) {
-                                        playerCell.classList.add('player-dying');
-                                        setTimeout(() => {
-                                            playerCell.innerHTML = '';
-                                            playerCell.classList.remove(player, 'player-dying');
-                                        }, 500);
-                                    }
-                                }
-                            }
-                        });
-
-                        // Check win conditions after immediate kills
-                        const alivePlayers = ['player1', 'player2', 'player3', 'player4'].filter(p => gameState[p].alive);
-                        if (alivePlayers.length === 1) {
-                            const winner = alivePlayers[0];
-                            scores[winner]++;
-                            gameActive = false;
-                            setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins!`), 500);
-                            clearInterval(shrinkIntervalId);
-                            return;
-                        } else if (!gameState.player1.alive) {
-                            gameActive = false;
-                            const aliveOpponents = ['player2', 'player3', 'player4'].filter(p => gameState[p].alive);
-                            if (aliveOpponents.length > 0) {
-                                const winner = aliveOpponents[Math.floor(Math.random() * aliveOpponents.length)];
-                                scores[winner]++;
-                                setTimeout(() => showDeathScreen(`${winner.toUpperCase()} wins! P1 died.`), 500);
-                            } else {
-                                setTimeout(() => showDeathScreen('P1 died, no winners!'), 500);
-                            }
-                            clearInterval(shrinkIntervalId);
-                            return;
-                        }
-
-                        // Warning animation
-                        setTimeout(() => {
-                            shrinkingEdges.forEach(pos => {
-                                const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
-                                if (cell) cell.classList.add('shrinking-3');
-                            });
-                        }, 0);
-
-                        setTimeout(() => {
-                            shrinkingEdges.forEach(pos => {
-                                const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
-                                if (cell) {
-                                    cell.classList.remove('shrinking-3');
-                                    cell.classList.add('shrinking-2');
-                                }
-                            });
-                        }, 1000);
-
-                        setTimeout(() => {
-                            shrinkingEdges.forEach(pos => {
-                                const cell = document.querySelector(`.cell[data-x="${pos.x}"][data-y="${pos.y}"]`);
-                                if (cell) {
-                                    cell.classList.remove('shrinking-2');
-                                    cell.classList.add('shrinking-1');
-                                }
-                            });
-                        }, 2000);
-
-                        // Finalize shrink after animation
-                        setTimeout(() => {
-                            if (!gameActive) return;
-
-                            if (rows > 1) {
-                                rows -= 2;
-                                board.style.gridTemplateRows = `repeat(${rows}, 60px)`;
-                                board.style.height = `${rows * 60}px`;
-                            } else {
-                                cols -= 1;
-                                board.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
-                                board.style.width = `${cols * 60}px`;
-                            }
-
-                            gameState.blocks = gameState.blocks.filter(b => b.x >= 0 && b.x < cols && b.y >= 0 && b.y < rows);
-                            gameState.durableBlocks = gameState.durableBlocks.filter(b => b.x >= 0 && b.x < cols && b.y >= 0 && b.y < rows);
-                            gameState.bombs = gameState.bombs.filter(b => b.x >= 0 && b.x < cols && b.y >= 0 && b.y < rows);
-                            gameState.bigBombs = gameState.bigBombs.filter(b => b.active && b.x >= 0 && b.x < cols && b.y >= 0 && b.y < rows);
-
-                            setupBoard();
-                            render();
-                        }, 3000);
-                    }, 10000);
-                }, 15000);
-            }
-
-            function isSafeToBomb(x, y, playerId) {
-                const explosionArea = getExplosionArea(x, y);
-                const directions = [
-                    { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-                    { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
-                ];
-                return directions.some(dir => {
-                    const newX = x + dir.dx;
-                    const newY = y + dir.dy;
-                    return isWalkable(newX, newY, playerId) && !explosionArea.some(exp => exp.x === newX && exp.y === newY);
-                });
-            }
-
-            function startAI(playerId) {
-                const targetPlayer = 'player1';
-                const aiInterval = setInterval(() => {
-                    if (!gameActive || !gameState[playerId].alive) return clearInterval(aiInterval);
-
-                    const { x, y } = gameState[playerId];
-                    const dx = gameState[targetPlayer].x - x;
-                    const dy = gameState[targetPlayer].y - y;
-                    const distance = Math.abs(dx) + Math.abs(dy);
-
-                    let dangerZone = [];
-                    gameState.bombs.forEach(bomb => {
-                        if (bomb.owner !== 'bigBomb') {
-                            const area = getExplosionArea(bomb.x, bomb.y);
-                            dangerZone.push(...area);
-                        }
-                    });
-
-                    const directions = [
-                        { dx: 0, dy: -1, name: 'up' },
-                        { dx: 0, dy: 1, name: 'down' },
-                        { dx: -1, dy: 0, name: 'left' },
-                        { dx: 1, dy: 0, name: 'right' }
-                    ];
-
-                    for (let i = directions.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [directions[i], directions[j]] = [directions[j], directions[i]];
-                    }
-
-                    if (dangerZone.some(d => d.x === x && d.y === y)) {
-                        for (let dir of directions) {
-                            const newX = x + dir.dx;
-                            const newY = y + dir.dy;
-                            if (isWalkable(newX, newY, playerId) && !dangerZone.some(d => d.x === newX && d.y === newY)) {
-                                gameState[playerId].x = newX;
-                                gameState[playerId].y = newY;
-                                aiLastMove[playerId] = dir.name;
-                                render();
-                                return;
-                            }
-                        }
-                    }
-
-                    const shouldBomb = Math.random() < 0.8 && distance > 1;
-                    if (shouldBomb) {
-                        const isSafe = isSafeToBomb(x, y, playerId);
-                        if (isSafe || (Math.random() < 0.3 && !isSafe)) {
-                            dropBomb(gameState[playerId], playerId);
-                            for (let dir of directions) {
-                                const newX = x + dir.dx;
-                                const newY = y + dir.dy;
-                                if (isWalkable(newX, newY, playerId) && !dangerZone.some(d => d.x === newX && d.y === newY)) {
-                                    gameState[playerId].x = newX;
-                                    gameState[playerId].y = newY;
-                                    aiLastMove[playerId] = dir.name;
-                                    render();
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    let moved = false;
-                    for (let dir of directions) {
-                        const newX = x + (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : -1) : 0);
-                        const newY = y + (Math.abs(dx) <= Math.abs(dy) ? (dy > 0 ? 1 : -1) : 0);
-                        if (isWalkable(newX, newY, playerId) && 
-                            !dangerZone.some(d => d.x === newX && d.y === newY) && 
-                            aiLastMove[playerId] !== (dir.name === 'up' ? 'down' : dir.name === 'down' ? 'up' : dir.name === 'left' ? 'right' : 'left')) {
-                            gameState[playerId].x = newX;
-                            gameState[playerId].y = newY;
-                            aiLastMove[playerId] = dir.name;
-                            render();
-                            moved = true;
-                            break;
-                        }
-                    }
-
-                    if (!moved) {
-                        for (let dir of directions) {
-                            const newX = x + dir.dx;
-                            const newY = y + dir.dy;
-                            if (isWalkable(newX, newY, playerId) && 
-                                !dangerZone.some(d => d.x === newX && d.y === newY) && 
-                                aiLastMove[playerId] !== (dir.name === 'up' ? 'down' : dir.name === 'down' ? 'up' : dir.name === 'left' ? 'right' : 'left')) {
-                                gameState[playerId].x = newX;
-                                gameState[playerId].y = newY;
-                                aiLastMove[playerId] = dir.name;
-                                render();
-                                break;
-                            }
-                        }
-                    }
-                }, 500);
-            }
-
-            document.addEventListener('keydown', (e) => {
-                if (!gameState || !gameState.player1.alive || !gameActive) return;
-                const { x, y } = gameState.player1;
-                let newX = x;
-                let newY = y;
-
-                switch (e.key.toLowerCase()) {
-                    case 'w': newY--; break;
-                    case 's': newY++; break;
-                    case 'a': newX--; break;
-                    case 'd': newX++; break;
-                    case ' ': 
-                        e.preventDefault();
-                        dropBomb(gameState.player1, 'player1');
-                        return;
-                }
-
-                if (isWalkable(newX, newY, 'player1')) {
-                    gameState.player1.x = newX;
-                    gameState.player1.y = newY;
-                    render();
+        function render() {
+            const state = pveGameState || gameState;
+            if (!state) return;
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.innerHTML = '';
+                cell.classList.remove('player1', 'player2', 'player3', 'player4', 'bomb-player1', 'bomb-player2', 'bomb-player3', 'bomb-player4', 'big-bomb', 'block', 'durable-block', 'hp-1', 'hp-2', 'hp-3', 'exploded', 'shrinking-3', 'shrinking-2', 'shrinking-1', 'shrunk', 'warning');
+                const x = parseInt(cell.dataset.x);
+                const y = parseInt(cell.dataset.y);
+                if (state.shrunkCells && state.shrunkCells.some(s => s.x === x && s.y === y)) {
+                    cell.classList.add('shrunk');
                 }
             });
 
-            try {
-                initializeGame();
-            } catch (error) {
-                status.textContent = 'Error loading game: ' + error.message;
-                console.error(error);
+            state.blocks.forEach(block => {
+                const cell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
+                if (cell && !cell.classList.contains('shrunk')) cell.classList.add('block');
+            });
+
+            state.durableBlocks.forEach(block => {
+                const cell = document.querySelector(`.cell[data-x="${block.x}"][data-y="${block.y}"]`);
+                if (cell && !cell.classList.contains('shrunk')) cell.classList.add('durable-block', `hp-${block.hp}`);
+            });
+
+            state.bombs.forEach(bomb => {
+                const cell = document.querySelector(`.cell[data-x="${bomb.x}"][data-y="${bomb.y}"]`);
+                if (cell && !cell.classList.contains('shrunk')) {
+                    const bombSpan = document.createElement('span');
+                    bombSpan.className = 'bomb-emoji';
+                    bombSpan.innerHTML = 'ðŸ’£';
+                    cell.appendChild(bombSpan);
+                    cell.classList.add(`bomb-player${Object.keys(state.players).indexOf(bomb.owner) + 1}`);
+                }
+            });
+
+            state.bigBombs.forEach(bomb => {
+                if (!bomb.active) {
+                    const cell = document.querySelector(`.cell[data-x="${bomb.x}"][data-y="${bomb.y}"]`);
+                    if (cell && !cell.classList.contains('shrunk')) {
+                        const bombSpan = document.createElement('span');
+                        bombSpan.className = 'bomb-emoji';
+                        bombSpan.innerHTML = 'ðŸ’£';
+                        cell.appendChild(bombSpan);
+                        cell.classList.add('big-bomb');
+                    }
+                }
+            });
+
+            Object.entries(state.players).forEach(([id, player], index) => {
+                if (player.alive) {
+                    const cell = document.querySelector(`.cell[data-x="${player.x}"][data-y="${player.y}"]`);
+                    if (cell && !cell.classList.contains('shrunk')) {
+                        const playerSpan = document.createElement('span');
+                        playerSpan.className = 'player-emoji';
+                        playerSpan.innerHTML = player.emoji;
+                        cell.appendChild(playerSpan);
+                        cell.classList.add(`player${index + 1}`);
+                    }
+                }
+            });
+
+            if (state.exploded && state.exploded.length > 0) {
+                state.exploded.forEach(e => {
+                    const cell = document.querySelector(`.cell[data-x="${e.x}"][data-y="${e.y}"]`);
+                    if (cell && !cell.classList.contains('shrunk')) cell.classList.add('exploded');
+                });
+            }
+        }
+
+        function updateScores() {
+            let players = [];
+            if (gameState) {
+                players = Object.entries(gameState.players);
+            } else if (pveGameState) {
+                players = Object.entries(pveGameState.players);
+            } else if (lobbyState && lobbyState.players) {
+                players = lobbyState.players.map((p, index) => [index.toString(), p]);
+            }
+            players.forEach(([id, player], index) => {
+                if (index < scoreElements.length) {
+                    scoreElements[index].textContent = `${player.name}: ${player.score || 0}`;
+                }
+            });
+            updateScoreVisibility();
+        }
+
+        function updateScoreVisibility() {
+            let playerCount = 0;
+            if (gameState) {
+                playerCount = Object.keys(gameState.players).length;
+            } else if (pveGameState) {
+                playerCount = Object.keys(pveGameState.players).length;
+            } else if (lobbyState && lobbyState.players) {
+                playerCount = lobbyState.players.length;
+            }
+            scoreElements.forEach((el, index) => {
+                el.style.display = (index < playerCount && (gameState || pveGameState)) ? 'block' : 'none';
+            });
+        }
+
+        function isWalkable(x, y, state) {
+            state = state || pveGameState || gameState;
+            return x >= 0 && x < cols && y >= 0 && y < rows &&
+                !state.blocks.some(b => b.x === x && b.y === y) &&
+                !state.durableBlocks.some(b => b.x === x && b.y === y) &&
+                !state.bigBombs.some(b => !b.active && b.x === x && b.y === y) &&
+                (!state.shrunkCells || !state.shrunkCells.some(s => s.x === x && s.y === y));
+        }
+
+        function updateShrinkTimer() {
+            const timeSpan = shrinkTimer.querySelector('span');
+            timeSpan.textContent = shrinkCountdown;
+            shrinkTimer.classList.remove('green', 'yellow', 'red');
+            if (shrinkCountdown >= 5) shrinkTimer.classList.add('green');
+            else if (shrinkCountdown >= 3) shrinkTimer.classList.add('yellow');
+            else shrinkTimer.classList.add('red');
+            if (!isShrinking) {
+                shrinkTimer.innerHTML = `Time before next shrinkage: <span>${shrinkCountdown}</span> seconds`;
+            }
+        }
+
+        function startShrinkTimer() {
+            stopShrinkTimer();
+            shrinkCountdown = 10;
+            isShrinking = false;
+            hasShrunk = false;
+            updateShrinkTimer();
+            shrinkTimer.style.display = 'block';
+            shrinkInterval = setInterval(() => {
+                if (!pveGameState && !gameState) {
+                    stopShrinkTimer();
+                    return;
+                }
+                if (isShrinking) return;
+                shrinkCountdown--;
+                updateShrinkTimer();
+                if (shrinkCountdown <= 0) {
+                    shrinkBoard();
+                    shrinkCountdown = 10;
+                    hasShrunk = true;
+                    const state = pveGameState || gameState;
+                    if (state) {
+                        const remainingCells = [];
+                        for (let y = 0; y < rows; y++) {
+                            for (let x = 0; x < cols; x++) {
+                                if (!state.shrunkCells.some(s => s.x === x && s.y === y)) {
+                                    remainingCells.push({ x, y });
+                                }
+                            }
+                        }
+                        if (remainingCells.length <= 1) {
+                            checkGameOver();
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        function stopShrinkTimer() {
+            if (shrinkInterval) {
+                clearInterval(shrinkInterval);
+                shrinkInterval = null;
+            }
+            shrinkCountdown = 10;
+            isShrinking = false;
+            hasShrunk = false;
+            updateShrinkTimer();
+        }
+
+        function animateShrink(newShrunkCells) {
+            if (!newShrunkCells || newShrunkCells.length === 0) return;
+            isShrinking = true;
+            shrinkTimer.textContent = 'The border is shrinking!';
+            let shrinkStep = 3;
+
+            const animateStep = () => {
+                return new Promise(resolve => {
+                    newShrunkCells.forEach(cell => {
+                        const domCell = document.querySelector(`.cell[data-x="${cell.x}"][data-y="${cell.y}"]`);
+                        if (domCell) {
+                            domCell.classList.remove('shrinking-3', 'shrinking-2', 'shrinking-1');
+                            domCell.classList.add(`shrinking-${shrinkStep}`);
+                        }
+                    });
+                    setTimeout(() => {
+                        shrinkStep--;
+                        if (shrinkStep >= 1) {
+                            resolve(animateStep());
+                        } else {
+                            newShrunkCells.forEach(cell => {
+                                const domCell = document.querySelector(`.cell[data-x="${cell.x}"][data-y="${cell.y}"]`);
+                                if (domCell) {
+                                    domCell.classList.add('shrunk');
+                                    domCell.style.backgroundColor = '#000000';
+                                    domCell.style.transition = 'background-color 1s ease, opacity 0.5s ease';
+                                    domCell.style.opacity = '0';
+                                }
+                            });
+
+                            const state = pveGameState || gameState;
+                            if (state) {
+                                newShrunkCells.forEach(cell => {
+                                    if (!state.shrunkCells.some(s => s.x === cell.x && s.y === cell.y)) {
+                                        state.shrunkCells.push(cell);
+                                    }
+                                });
+                                if (pveGameState) {
+                                    render();
+                                    checkBorderKill();
+                                } else if (isConnected) {
+                                    socket.emit('shrinkBoard', newShrunkCells);
+                                }
+                            }
+                            resolve();
+                        }
+                    }, 1000);
+                });
+            };
+
+            animateStep().then(() => {
+                isShrinking = false;
+                checkBorderKill();
+            });
+        }
+
+        function shrinkBoard() {
+            const state = pveGameState || gameState;
+            if (!state) return;
+            if (!state.shrunkCells) state.shrunkCells = [];
+
+            const newShrunkCells = [];
+            let minX = cols, maxX = -1, minY = rows, maxY = -1;
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (!state.shrunkCells.some(s => s.x === x && s.y === y)) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+
+            if (minX > maxX || minY > maxY) {
+                checkGameOver();
+                return;
+            }
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (x === minX || x === maxX || y === minY || y === maxY) {
+                        if (!state.shrunkCells.some(s => s.x === x && s.y === y)) {
+                            newShrunkCells.push({ x, y });
+                        }
+                    }
+                }
+            }
+
+            if (newShrunkCells.length === 0) {
+                checkGameOver();
+                return;
+            }
+
+            animatedShrunkCells = animatedShrunkCells.concat(newShrunkCells);
+            animateShrink(newShrunkCells);
+        }
+
+        function checkBorderKill() {
+            const state = pveGameState || gameState;
+            if (!state) return;
+            let killed = false;
+            Object.values(state.players).forEach(player => {
+                if (player.alive && state.shrunkCells.some(s => s.x === player.x && s.y === player.y)) {
+                    player.alive = false;
+                    killed = true;
+                }
+            });
+            if (killed) {
+                render();
+                checkGameOver();
+            }
+        }
+
+        function startPveGame(numPlayers) {
+            const name = nameInput.value.trim() || 'Player1';
+            pveGameState = {
+                players: {
+                    'player1': { x: 0, y: 0, emoji: 'ðŸŒ±', alive: true, name, score: 0, isAI: false, lastBombTime: 0 }
+                },
+                bombs: [],
+                blocks: [],
+                durableBlocks: [],
+                bigBombs: [],
+                exploded: [],
+                shrunkCells: []
+            };
+
+            const spawnPoints = [
+                { x: 0, y: 0 }, { x: 20, y: 0 }, { x: 0, y: 10 }, { x: 20, y: 10 }
+            ];
+
+            const blocks = generateBlocks();
+            pveGameState.blocks = blocks.filter(block => 
+                !spawnPoints.some(sp => sp.x === block.x && sp.y === block.y)
+            );
+
+            const durableBlocks = generateDurableBlocks();
+            pveGameState.durableBlocks = durableBlocks.filter(block => 
+                !spawnPoints.some(sp => sp.x === block.x && sp.y === block.y)
+            );
+
+            const bigBombs = generateBigBombs();
+            pveGameState.bigBombs = bigBombs.filter(bomb => 
+                !spawnPoints.some(sp => sp.x === bomb.x && sp.y === bomb.y)
+            );
+
+            const aiEmojis = ['ðŸ˜Š', 'ðŸ¦‘', 'ðŸ¦„'];
+            const aiPositions = [{ x: 20, y: 0 }, { x: 0, y: 10 }, { x: 20, y: 10 }];
+            for (let i = 2; i <= numPlayers; i++) {
+                pveGameState.players[`ai${i}`] = {
+                    x: aiPositions[i - 2].x,
+                    y: aiPositions[i - 2].y,
+                    emoji: aiEmojis[i - 2],
+                    alive: true,
+                    name: `AI${i - 1}`,
+                    score: 0,
+                    isAI: true,
+                    lastBombTime: 0,
+                    lastMoveTime: 0,
+                    target: null
+                };
+            }
+
+            initializeGame();
+            startAI();
+            startShrinkTimer();
+            updateScores();
+        }
+
+        function generateBlocks() {
+            const blocks = [];
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (Math.random() < 0.7 && 
+                        !(x <= 1 && y <= 1) && !(x >= 19 && y <= 1) &&
+                        !(x <= 1 && y >= 9) && !(x >= 19 && y >= 9)) {
+                        blocks.push({ x, y });
+                    }
+                }
+            }
+            return blocks;
+        }
+
+        function generateDurableBlocks() {
+            const durableBlocks = [];
+            const numBlocks = Math.floor(Math.random() * 20) + 5;
+            const centerX = 10, centerY = 5;
+            const possiblePositions = [];
+            for (let y = centerY - 2; y <= centerY + 2; y++) {
+                for (let x = centerX - 5; x <= centerX + 5; x++) {
+                    if (x >= 0 && x < cols && y >= 0 && y < rows && 
+                        !(x <= 1 && y <= 1) && !(x >= 19 && y <= 1) &&
+                        !(x <= 1 && y >= 9) && !(x >= 19 && y >= 9)) {
+                        possiblePositions.push({ x, y });
+                    }
+                }
+            }
+            for (let i = 0; i < numBlocks && possiblePositions.length > 0; i++) {
+                const index = Math.floor(Math.random() * possiblePositions.length);
+                durableBlocks.push({ x: possiblePositions[index].x, y: possiblePositions[index].y, hp: 3 });
+                possiblePositions.splice(index, 1);
+            }
+            return durableBlocks;
+        }
+
+        function generateBigBombs() {
+            const bigBombs = [];
+            const numBombs = Math.floor(Math.random() * 3) + 3;
+            const centerX = 10, centerY = 5;
+            const possiblePositions = [];
+            for (let y = centerY - 2; y <= centerY + 2; y++) {
+                for (let x = centerX - 2; x <= centerX + 2; x++) {
+                    if (x >= 0 && x < cols && y >= 0 && y < rows) {
+                        const isBlocked = (pveGameState?.blocks || []).some(b => b.x === x && b.y === y) ||
+                                          (pveGameState?.durableBlocks || []).some(b => b.x === x && b.y === y);
+                        if (!isBlocked) {
+                            possiblePositions.push({ x, y });
+                        }
+                    }
+                }
+            }
+            for (let i = 0; i < numBombs && possiblePositions.length > 0; i++) {
+                const index = Math.floor(Math.random() * possiblePositions.length);
+                bigBombs.push({ x: possiblePositions[index].x, y: possiblePositions[index].y, active: false });
+                possiblePositions.splice(index, 1);
+            }
+            return bigBombs;
+        }
+
+        function startAI() {
+            stopAI();
+            aiInterval = setInterval(() => {
+                if (!pveGameState) return;
+                Object.entries(pveGameState.players).forEach(([id, player]) => {
+                    if (player.isAI && player.alive) {
+                        const now = Date.now();
+                        if (now - (player.lastMoveTime || 0) < 500) return;
+                        player.lastMoveTime = now;
+
+                        let inDanger = false;
+                        let dangerAreas = [];
+                        pveGameState.bombs.forEach(bomb => {
+                            const explosionArea = getExplosionArea(bomb.x, bomb.y);
+                            if (explosionArea.some(e => e.x === player.x && e.y === player.y)) {
+                                inDanger = true;
+                                dangerAreas = dangerAreas.concat(explosionArea);
+                            }
+                        });
+
+                        let nearestTarget = null;
+                        let minDistance = Infinity;
+                        let targetType = null;
+
+                        if (!inDanger) {
+                            pveGameState.bigBombs.forEach(bomb => {
+                                if (!bomb.active) {
+                                    const distance = Math.abs(bomb.x - player.x) + Math.abs(bomb.y - player.y);
+                                    if (distance < minDistance) {
+                                        minDistance = distance;
+                                        nearestTarget = bomb;
+                                        targetType = 'bigBomb';
+                                    }
+                                }
+                            });
+                        }
+
+                        if (!nearestTarget || inDanger) {
+                            Object.entries(pveGameState.players).forEach(([otherId, otherPlayer]) => {
+                                if (otherId !== id && otherPlayer.alive) {
+                                    const distance = Math.abs(otherPlayer.x - player.x) + Math.abs(otherPlayer.y - player.y);
+                                    if (distance < minDistance) {
+                                        minDistance = distance;
+                                        nearestTarget = otherPlayer;
+                                        targetType = 'player';
+                                    }
+                                }
+                            });
+                        }
+
+                        player.target = nearestTarget;
+
+                        const directions = [
+                            { dx: -1, dy: 0 },
+                            { dx: 1, dy: 0 },
+                            { dx: 0, dy: -1 },
+                            { dx: 0, dy: 1 }
+                        ];
+
+                        if (inDanger) {
+                            const safeMoves = directions
+                                .map(d => ({ dx: d.dx, dy: d.dy, x: player.x + d.dx, y: player.y + d.dy }))
+                                .filter(move => 
+                                    isWalkable(move.x, move.y, pveGameState) &&
+                                    !dangerAreas.some(e => e.x === move.x && e.y === move.y)
+                                );
+                            if (safeMoves.length > 0) {
+                                const move = safeMoves[Math.floor(Math.random() * safeMoves.length)];
+                                player.x = move.x;
+                                player.y = move.y;
+                            }
+                        } else if (nearestTarget) {
+                            const dx = nearestTarget.x - player.x;
+                            const dy = nearestTarget.y - player.y;
+                            let moveDirection = null;
+                            if (Math.abs(dx) > Math.abs(dy)) {
+                                moveDirection = dx > 0 ? { dx: 1, dy: 0 } : { dx: -1, dy: 0 };
+                            } else {
+                                moveDirection = dy > 0 ? { dx: 0, dy: 1 } : { dx: 0, dy: -1 };
+                            }
+
+                            const newX = player.x + moveDirection.dx;
+                            const newY = player.y + moveDirection.dy;
+                            if (isWalkable(newX, newY, pveGameState)) {
+                                player.x = newX;
+                                player.y = newY;
+                            }
+
+                            const distanceToTarget = Math.abs(nearestTarget.x - player.x) + Math.abs(nearestTarget.y - player.y);
+                            const canDropBomb = now - (player.lastBombTime || 0) >= 1000;
+                            const shouldDropBomb = (targetType === 'player' && distanceToTarget <= 3) ||
+                                                  (targetType === 'bigBomb' && distanceToTarget <= 1);
+
+                            if (canDropBomb && shouldDropBomb && !pveGameState.bombs.some(b => b.x === player.x && b.y === player.y)) {
+                                const bomb = { x: player.x, y: player.y, owner: id, placedAt: now };
+                                pveGameState.bombs.push(bomb);
+                                player.lastBombTime = now;
+                                setTimeout(() => {
+                                    if (pveGameState && pveGameState.bombs.includes(bomb)) {
+                                        explodeBomb(bomb);
+                                    }
+                                }, 1000);
+                            }
+                        } else {
+                            const possibleMoves = directions
+                                .map(d => ({ dx: d.dx, dy: d.dy, x: player.x + d.dx, y: player.y + d.dy }))
+                                .filter(move => isWalkable(move.x, move.y, pveGameState));
+                            if (possibleMoves.length > 0) {
+                                const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                                player.x = move.x;
+                                player.y = move.y;
+
+                                const canDropBomb = now - (player.lastBombTime || 0) >= 1000;
+                                if (canDropBomb && Math.random() < 0.3 && !pveGameState.bombs.some(b => b.x === player.x && b.y === player.y)) {
+                                    const bomb = { x: player.x, y: player.y, owner: id, placedAt: now };
+                                    pveGameState.bombs.push(bomb);
+                                    player.lastBombTime = now;
+                                    setTimeout(() => {
+                                        if (pveGameState && pveGameState.bombs.includes(bomb)) {
+                                            explodeBomb(bomb);
+                                        }
+                                    }, 1000);
+                                }
+                            }
+                        }
+                    }
+                });
+                render();
+                updateScores();
+                checkBorderKill();
+                checkGameOver();
+            }, 500);
+        }
+
+        function stopAI() {
+            if (aiInterval) {
+                clearInterval(aiInterval);
+                aiInterval = null;
+            }
+        }
+
+        function explodeBomb(bomb) {
+            if (!pveGameState) return;
+            const index = pveGameState.bombs.indexOf(bomb);
+            if (index === -1) return;
+            pveGameState.bombs.splice(index, 1);
+            const explosionArea = getExplosionArea(bomb.x, bomb.y);
+            pveGameState.exploded = explosionArea;
+
+            pveGameState.blocks = pveGameState.blocks.filter(b => !explosionArea.some(e => e.x === b.x && e.y === b.y));
+            pveGameState.durableBlocks.forEach(block => {
+                if (explosionArea.some(e => e.x === block.x && e.y === block.y)) block.hp--;
+            });
+            pveGameState.durableBlocks = pveGameState.durableBlocks.filter(b => b.hp > 0);
+
+            const bigBombsToExplode = pveGameState.bigBombs.filter(b => !b.active && explosionArea.some(e => e.x === b.x && e.y === b.y));
+            bigBombsToExplode.forEach(bomb => {
+                bomb.active = true;
+                setTimeout(() => {
+                    if (pveGameState) {
+                        explodeBigBomb(bomb);
+                    }
+                }, 500);
+            });
+
+            Object.values(pveGameState.players).forEach(player => {
+                if (player.alive && explosionArea.some(e => e.x === player.x && e.y === player.y)) {
+                    player.alive = false;
+                }
+            });
+
+            setTimeout(() => {
+                if (pveGameState) {
+                    pveGameState.exploded = [];
+                    render();
+                    checkBorderKill();
+                    checkGameOver();
+                }
+            }, 500);
+
+            render();
+            checkBorderKill();
+            checkGameOver();
+        }
+
+        function explodeBigBomb(bomb) {
+            if (!pveGameState || !bomb.active) return;
+            const explosionArea = getBigExplosionArea(bomb.x, bomb.y);
+            pveGameState.exploded = explosionArea;
+
+            pveGameState.blocks = pveGameState.blocks.filter(b => !explosionArea.some(e => e.x === b.x && e.y === b.y));
+            pveGameState.durableBlocks.forEach(block => {
+                if (explosionArea.some(e => e.x === block.x && e.y === block.y)) block.hp--;
+            });
+            pveGameState.durableBlocks = pveGameState.durableBlocks.filter(b => b.hp > 0);
+
+            const otherBigBombs = pveGameState.bigBombs.filter(b => !b.active && b !== bomb && explosionArea.some(e => e.x === b.x && e.y === b.y));
+            otherBigBombs.forEach(otherBomb => {
+                otherBomb.active = true;
+                setTimeout(() => {
+                    if (pveGameState) {
+                        explodeBigBomb(otherBomb);
+                    }
+                }, 500);
+            });
+
+            pveGameState.bigBombs = pveGameState.bigBombs.filter(b => b !== bomb);
+
+            Object.values(pveGameState.players).forEach(player => {
+                if (player.alive && explosionArea.some(e => e.x === player.x && e.y === player.y)) {
+                    player.alive = false;
+                }
+            });
+
+            setTimeout(() => {
+                if (pveGameState) {
+                    pveGameState.exploded = [];
+                    render();
+                    checkBorderKill();
+                    checkGameOver();
+                }
+            }, 500);
+
+            render();
+            checkBorderKill();
+            checkGameOver();
+        }
+
+        function getExplosionArea(x, y) {
+            const explosionArea = [{ x, y }];
+            const directions = [{ dx: -1, dy: 0 }, { dx: 1, dy: 0 }, { dx: 0, dy: -1 }, { dx: 0, dy: 1 }];
+            directions.forEach(dir => {
+                const newX = x + dir.dx;
+                const newY = y + dir.dy;
+                if (newX >= 0 && newX < cols && newY >= 0 && newY < rows) {
+                    explosionArea.push({ x: newX, y: newY });
+                }
+            });
+            return explosionArea;
+        }
+
+        function getBigExplosionArea(x, y) {
+            const explosionArea = [{ x, y }];
+            const directions = [
+                { dx: -1, dy: 0 }, { dx: -2, dy: 0 },
+                { dx: 1, dy: 0 }, { dx: 2, dy: 0 },
+                { dx: 0, dy: -1 }, { dx: 0, dy: -2 },
+                { dx: 0, dy: 1 }, { dx: 0, dy: 2 }
+            ];
+            directions.forEach(dir => {
+                const newX = x + dir.dx;
+                const newY = y + dir.dy;
+                if (newX >= 0 && newX < cols && newY >= 0 && newY < rows) {
+                    explosionArea.push({ x: newX, y: newY });
+                }
+            });
+            return explosionArea;
+        }
+
+        function checkGameOver() {
+            const state = pveGameState || gameState;
+            if (!state) return;
+
+            const alivePlayers = Object.values(state.players).filter(p => p.alive);
+            const player1 = state.players['player1'];
+
+            if (pveGameState) {
+                const aliveAI = alivePlayers.filter(p => p.isAI);
+                if (!player1.alive) {
+                    deathMessage.textContent = 'You lost!';
+                    stopShrinkTimer();
+                    stopAI();
+                    deathScreen.style.display = 'flex';
+                    board.style.display = 'none';
+                    status.style.display = 'none';
+                    shrinkTimer.style.display = 'none';
+                    scoreElements.forEach(el => el.style.display = 'none');
+                    let countdown = 3;
+                    countdownElement.textContent = countdown;
+                    const interval = setInterval(() => {
+                        countdown--;
+                        countdownElement.textContent = countdown;
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                            deathScreen.style.display = 'none';
+                            pveGameState = null;
+                            showPveScreen();
+                        }
+                    }, 1000);
+                } else if (aliveAI.length === 0) {
+                    if (!player1.scoreUpdated) {
+                        player1.score = (player1.score || 0) + 1;
+                        player1.scoreUpdated = true;
+                    }
+                    deathMessage.textContent = 'You win!';
+                    stopShrinkTimer();
+                    stopAI();
+                    deathScreen.style.display = 'flex';
+                    board.style.display = 'none';
+                    status.style.display = 'none';
+                    shrinkTimer.style.display = 'none';
+                    scoreElements.forEach(el => el.style.display = 'none');
+                    let countdown = 3;
+                    countdownElement.textContent = countdown;
+                    const interval = setInterval(() => {
+                        countdown--;
+                        countdownElement.textContent = countdown;
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                            deathScreen.style.display = 'none';
+                            pveGameState = null;
+                            showPveScreen();
+                        }
+                    }, 1000);
+                }
+            } else if (gameState) {
+                if (alivePlayers.length <= 1) {
+                    const winner = alivePlayers[0];
+                    if (winner && !winner.scoreUpdated) {
+                        winner.score = (winner.score || 0) + 1;
+                        winner.scoreUpdated = true;
+                    }
+                    socket.emit('gameOver', {
+                        message: winner ? `${winner.name} wins!` : 'No winners!',
+                        winnerId: winner ? winner.id : null
+                    });
+                }
+            }
+        }
+
+        document.getElementById('pve-btn').addEventListener('click', showPveScreen);
+
+        document.getElementById('pvp-btn').addEventListener('click', () => {
+            const name = getCookie('playerNickname') || 'Player';
+            socket.emit('createLobby', { name, emoji: 'ðŸŒ±' });
+        });
+
+        document.getElementById('back-btn').addEventListener('click', showInitialScreen);
+
+        document.getElementById('lobby-back-btn').addEventListener('click', () => {
+            socket.emit('leaveLobby', lobbyState.link);
+            showInitialScreen();
+            window.history.replaceState({}, document.title, window.location.pathname);
+        });
+
+        saveNameBtn.addEventListener('click', () => saveNickname(nameInput, saveNameBtn));
+        saveLobbyNameBtn.addEventListener('click', () => saveNickname(lobbyNameInput, saveLobbyNameBtn));
+
+        document.querySelectorAll('.match-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const numPlayers = parseInt(btn.dataset.players);
+                startPveGame(numPlayers);
+            });
+        });
+
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!btn.disabled) {
+                    socket.emit('selectEmoji', btn.dataset.emoji);
+                }
+            });
+        });
+
+        readyBtn.addEventListener('click', () => {
+            socket.emit('toggleReady');
+        });
+
+        startBtn.addEventListener('click', () => {
+            if (!startBtn.disabled) {
+                socket.emit('startGame', lobbyState.link);
             }
         });
+
+        lobbyLink.addEventListener('click', () => {
+            const link = lobbyLink.textContent.replace('Lobby Link: ', '');
+            navigator.clipboard.writeText(link).then(() => {
+                lobbyLink.classList.add('copied');
+                setTimeout(() => lobbyLink.classList.remove('copied'), 2000);
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'w') keyState.w = true;
+            if (e.key === 's') keyState.s = true;
+            if (e.key === 'a') keyState.a = true;
+            if (e.key === 'd') keyState.d = true;
+            if (e.key === ' ' && (pveGameState || gameState)) {
+                e.preventDefault();
+                const state = pveGameState || gameState;
+                const player = state.players[pveGameState ? 'player1' : playerId];
+                if (player && player.alive) {
+                    const now = Date.now();
+                    if (now - lastBombDropTime < 1000) return;
+                    lastBombDropTime = now;
+                    if (pveGameState) {
+                        if (!pveGameState.bombs.some(b => b.x === player.x && b.y === player.y)) {
+                            const bomb = { x: player.x, y: player.y, owner: 'player1', placedAt: now };
+                            pveGameState.bombs.push(bomb);
+                            player.lastBombTime = now;
+                            setTimeout(() => {
+                                if (pveGameState && pveGameState.bombs.includes(bomb)) {
+                                    explodeBomb(bomb);
+                                }
+                            }, 1000);
+                            render();
+                        }
+                    } else if (isConnected) {
+                        socket.emit('dropBomb', { x: player.x, y: player.y });
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'w') keyState.w = false;
+            if (e.key === 's') keyState.s = false;
+            if (e.key === 'a') keyState.a = false;
+            if (e.key === 'd') keyState.d = false;
+        });
+
+        setInterval(() => {
+            const now = Date.now();
+            if (now - lastMoveTime < moveCooldown) return;
+            lastMoveTime = now;
+
+            const state = pveGameState || gameState;
+            if (!state) return;
+            const player = state.players[pveGameState ? 'player1' : playerId];
+            if (!player || !player.alive) return;
+
+            let newX = player.x;
+            let newY = player.y;
+
+            if (keyState.w) newY--;
+            if (keyState.s) newY++;
+            if (keyState.a) newX--;
+            if (keyState.d) newX++;
+
+            if ((newX !== player.x || newY !== player.y) && isWalkable(newX, newY, state)) {
+                player.x = newX;
+                player.y = newY;
+                if (pveGameState) {
+                    render();
+                    checkBorderKill();
+                    checkGameOver();
+                } else if (isConnected) {
+                    socket.emit('move', { x: newX, y: newY });
+                }
+            }
+        }, 10);
     </script>
 </body>
 </html>
